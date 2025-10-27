@@ -8,12 +8,16 @@ osmnx.settings.use_cache = True
 # 26.189690,50.628449,26.228657,50.642821
 #coords = [26.210933,50.635019,26.213604,50.636244]
 center_point = [50.635678, 26.212011]
-zoom_level = 18
+zoom_level = 19
 hor_dist = (40075016.686 * numpy.cos(numpy.radians(center_point[0]))) / numpy.exp2(zoom_level)
 bbox = utils_geo.bbox_from_point(center_point, hor_dist)
+print(("{0:0.6f}").format(bbox[0]), ("{0:0.6f}").format(bbox[1]), ("{0:0.6f}").format(bbox[2]), ("{0:0.6f}").format(bbox[3]), sep=",")
 print("START D")
-features = osmnx.features.features_from_bbox(bbox, {"building": True,})
-network = osmnx.graph.graph_from_bbox(bbox, truncate_by_edge = True, simplify = True)
+# features = osmnx.features.features_from_bbox(bbox, {"building": True,})
+# network = osmnx.graph.graph_from_bbox(bbox, truncate_by_edge = True, simplify = True, retain_all = True)
+features = osmnx.features.features_from_xml("\\\\wsl.localhost\\Ubuntu\\home\\aaa\\out.osm", tags = {"building": True,})
+# highway != path vvv
+network = osmnx.graph.graph_from_xml("\\\\wsl.localhost\\Ubuntu\\home\\aaa\\out1.osm", simplify = True, retain_all = False)
 #admin = osmnx.features.features_from_point(center_point, {"admin_level": "4"}, hor_dist / 2)
 print("END D")
 
