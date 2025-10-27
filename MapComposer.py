@@ -1,4 +1,6 @@
 from APIConnector import APIConnector
+from pandas import DataFrame
+from osmnx.projection import project_gdf
 
 class Features:
     def __init__(self):
@@ -17,29 +19,171 @@ class MapComposer:
         self.API = APIConnector()
 
     def compose(self, map):
-        if (map.zoom == 1):
-            map.features, map.network, map.street_widths = self.__zoom_level_1__(map.bbox)
+        if (map.zoom == 19 or map.zoom == 18):
+            map.features, map.network = self.__zoom_level_close__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 8,
+                                 "trunk": 7, "primary": 7, "secondary": 7, "tertiary": 7,
+                                 "unclassified": 5, "residential": 5, "motorway_link": 5, "trunk_link": 5, "primary_link": 5, "secondary_link": 5, "tertiary_link": 5, "living_street": 5, "pedestrian": 5,
+                                 "service": 3, "raceway": 3, "road": 3}
+            map.railway_width = 2
+        elif (map.zoom == 17 or map.zoom == 16):
+            map.features, map.network = self.__zoom_level_close__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 6,
+                                 "trunk": 5, "primary": 5, "secondary": 5, "tertiary": 5,
+                                 "unclassified": 3, "residential": 3, "motorway_link": 3, "trunk_link": 3, "primary_link": 3, "secondary_link": 3, "tertiary_link": 3, "living_street": 3, "pedestrian": 3}
+            map.railway_width = 2
+        elif (map.zoom == 15 or map.zoom == 14):
+            map.features, map.network = self.__zoom_level_medium_close__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 4,
+                                 "trunk": 3, "primary": 3, "secondary": 3, "tertiary": 3}
+            map.railway_width = 2
+        elif (map.zoom == 13 or map.zoom == 12):
+            map.features, map.network = self.__zoom_level_medium__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 3,
+                                 "trunk": 2, "primary": 2, "secondary": 2, "tertiary": 2}
             map.railway_width = 1
-        elif (map.zoom == 2):
-            pass
-        elif (map.zoom == 3):
+        elif (map.zoom == 11 or map.zoom == 10):
+            map.features, map.network = self.__zoom_level_medium_far__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 2}
+            map.railway_width = 1
+        elif (map.zoom == 9 or map.zoom == 8):
+            map.features, map.network = self.__zoom_level_far__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 2}
+            map.railway_width = 1
+        elif (map.zoom == 7 or map.zoom == 6):
+            #map.features, map.network = self.__zoom_level_super_far__(map.bbox, map.dist)
+            #map.street_widths = {"motorway": 1}
+            #map.railway_width = 1
             pass
     
-    def __zoom_level_1__(self, bbox):
+    def __zoom_level_close__(self, bbox, dist):
         features = Features()
         network = Network()
+        print("----- Start download -----")
+        print("> Buildings")
         features.buildings = self.API.get_features(bbox, {"building": True})
-        features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "flowerbed", "forest", "meadow", "orchard", "plant_nursery", "vineyard", "cemetery", "grass", "recreation_ground", "village_green"],
-                                                           "leisure": ["garden", "park", "pitch"],
-                                                           "natural": ["grassland", "heath", "scrub", "tree", "tree_row", "wood"]})
+        print("> Grass")
+        features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "flowerbed", "forest", "meadow", "orchard", "plant_nursery", "vineyard", "cemetery", "grass", "recreation_ground", "village_green"],
+                                                      "leisure": ["garden", "park", "pitch"],
+                                                      "natural": ["grassland", "heath", "scrub", "tree", "tree_row", "wood"]})
+        print("> Sand")
         features.sand = self.API.get_features(bbox, {"natural": ["beach", "shoal", "sand"]})
+        print("> Water")
         features.water = self.API.get_features(bbox, {"landuse": ["basin"],
-                                                           "leisure": ["swimming_pool"],
-                                                           "natural": ["bay", "reef", "spring", "strait", "water"]})
+                                                      "leisure": ["swimming_pool"],
+                                                      "natural": ["bay", "reef", "spring", "strait", "water"]})
+        print("> Highway")
         network.highway = self.API.get_network(bbox, "all", None)
+        print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'construction|disused|funicular|light_rail|miniature|monorail|narrow_gauge|rail|subway|tram']")
-        street_widths = {"motorway": 8,
-                              "trunk": 7, "primary": 7, "secondary": 7, "tertiary": 7,
-                              "unclassified": 5, "residential": 5, "motorway_link": 5, "trunk_link": 5, "primary_link": 5, "secondary_link": 5, "tertiary_link": 5, "living_street": 5, "pedestrian": 5,
-                              "service": 3, "raceway": 3, "road": 3}
-        return (features, network, street_widths)
+        print("----- Download done -----")
+        return (features, network)
+    
+    def __zoom_level_medium_close__(self, bbox, dist):
+        features = Features()
+        network = Network()
+        print("----- Start download -----")
+        print("> Buildings")
+        features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Grass")
+        features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "orchard", "plant_nursery", "grass", "recreation_ground"],
+                                                      "leisure": ["park", "pitch"],
+                                                      "natural": ["grassland", "heath", "scrub", "wood"]})
+        print("> Sand")
+        features.sand = self.API.get_features(bbox, {"natural": ["beach", "shoal", "sand"]})
+        print("> Water")
+        features.water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
+        print("> Highway")
+        network.highway = self.API.get_network(bbox, "drive", None)
+        print("> Railway")
+        network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|monorail|narrow_gauge|rail|subway|tram']")
+        print("----- Download done -----")
+        return (features, network)
+    
+    def __zoom_level_medium__(self, bbox, dist):
+        features = Features()
+        network = Network()
+        print("----- Start download -----")
+        print("> Buildings")
+        features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Grass")
+        grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
+                                             "leisure": ["park"],
+                                             "natural": ["grassland", "heath", "scrub", "wood"]})
+        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        print("> Sand")
+        features.sand = DataFrame()
+        print("  Skipped")
+        print("> Water")
+        water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
+        features.water = self.__filter_features_by_area__(water, dist / 2)
+        print("> Highway")
+        network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary|secondary|tertiary|residential']")
+        print("> Railway")
+        network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|narrow_gauge|rail']")
+        print("----- Download done -----")
+        return (features, network)
+    
+    def __zoom_level_medium_far__(self, bbox, dist):
+        features = Features()
+        network = Network()
+        print("----- Start download -----")
+        print("> Buildings")
+        features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Grass")
+        grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
+                                             "natural": ["grassland", "heath", "scrub", "wood"]})
+        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        print("> Sand")
+        features.sand = DataFrame()
+        print("  Skipped")
+        print("> Water")
+        water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
+        features.water = self.__filter_features_by_area__(water, dist / 2)
+        print("> Highway")
+        network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary|secondary|tertiary']")
+        print("> Railway")
+        network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
+        print("----- Download done -----")
+        return (features, network)
+    
+    def __zoom_level_far__(self, bbox, dist):
+        features = Features()
+        network = Network()
+        print("----- Start download -----")
+        print("> Buildings")
+        features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Grass")
+        grass = self.API.get_features(bbox, {"landuse": ["farmland", "forest"],
+                                             "natural": ["grassland"]})
+        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        print("> Sand")
+        features.sand = DataFrame()
+        print("  Skipped")
+        print("> Water")
+        water = self.API.get_features(bbox, {"natural": ["water"]})
+        features.water = self.__filter_features_by_area__(water, dist / 2)
+        print("> Highway")
+        network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary']")
+        print("> Railway")
+        network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
+        print("----- Download done -----")
+        return (features, network)
+    
+    def __zoom_level_super_far__(self, bbox, dist):
+        features = Features()
+        network = Network()
+        # TODO: zoom levels 6 & 7
+        return (features, network)
+    
+    def __filter_features_by_area__(self, features, area):
+        features = features[features.geometry.type.isin(["Polygon", "MultiPolygon"])]
+        features = project_gdf(features)
+        features["area"] = features["geometry"].area
+        features = features[features["area"] > area]
+        features = project_gdf(features, to_latlong = True)
+        return features
