@@ -36,7 +36,7 @@ class MapComposer:
             map.features, map.network = self.__zoom_level_medium_close__(map.bbox, map.dist)
             map.street_widths = {"motorway": 4,
                                  "trunk": 3, "primary": 3, "secondary": 3, "tertiary": 3}
-            map.railway_width = 2
+            map.railway_width = 1
         elif (map.zoom == 13 or map.zoom == 12):
             map.features, map.network = self.__zoom_level_medium__(map.bbox, map.dist)
             map.street_widths = {"motorway": 3,
@@ -51,10 +51,10 @@ class MapComposer:
             map.street_widths = {"motorway": 2}
             map.railway_width = 1
         elif (map.zoom == 7 or map.zoom == 6):
-            #map.features, map.network = self.__zoom_level_super_far__(map.bbox, map.dist)
-            #map.street_widths = {"motorway": 1}
-            #map.railway_width = 1
-            pass
+            return
+            map.features, map.network = self.__zoom_level_super_far__(map.bbox, map.dist)
+            map.street_widths = {"motorway": 1}
+            map.railway_width = 1
     
     def __zoom_level_close__(self, bbox, dist):
         features = Features()

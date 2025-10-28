@@ -1,26 +1,9 @@
 from osmnx import plot, graph_to_gdfs
 import matplotlib.pyplot as plt
+import numpy
 
 class ToEPDFormat:
-    def convert(self, map, show):
-        should_show = [not show] * 6
-        if (not map.features.grass.empty): should_show[0] = show
-        if(not map.features.sand.empty):
-            should_show = [not show] * 6
-            should_show[1] = show
-        if (not map.features.sand.empty):
-            should_show = [not show] * 6
-            should_show[2] = show
-        if (len(map.network.railway.graph) != 0):
-            should_show = [not show] * 6
-            should_show[3] = show
-        if (len(map.network.highway.graph) != 0):
-            should_show = [not show] * 6
-            should_show[4] = show
-        if (not map.features.buildings.empty):
-            should_show = [not show] * 6
-            should_show[5] = show      
-
+    def convert(self, map, show):     
         ax = None
         # Features
         if (not map.features.grass.empty):
@@ -37,18 +20,80 @@ class ToEPDFormat:
         # Buildings
         if (not map.features.buildings.empty):
             _, ax = plot.plot_footprints(map.features.buildings, ax = ax, color = "#ff8000", show = False, close = False)
-        
-        '''
-        streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
-        import numpy
+
+        ax.set_xlim(map.bbox[0], map.bbox[2])
+        ax.set_ylim(map.bbox[1], map.bbox[3])
+        ax.set_facecolor("#ffffff")
+        fig = plt.gcf()
+        tightbox = fig.get_tightbbox(fig.canvas.get_renderer())
+        self.__annotate__(ax, map)
+        plt.savefig("Map.png", bbox_inches = tightbox, pad_inches = 0, dpi = 150)
+        if (show): plt.show()
+        plt.close(fig)
+
+    def __annotate__(self, ax, map):
+        match (map.zoom):
+            case 18 | 19:
+               if (len(map.network.highway) != 0):
+                   streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                   self.__annotate_streets__(ax, streets)
+               if (not map.features.buildings.empty): self.__annotate_buildings__(ax, map.features.buildings)
+            case 16 | 17:
+                if (len(map.network.highway) == 0): return
+                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                self.__annotate_streets__(ax, streets)
+            case 14 | 15:
+                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
+                self.__annotate_streets__(ax, streets)
+                # cities, villages and districts
+            case 12 | 13:
+                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
+                self.__annotate_streets__(ax, streets)
+                # cities and villages
+            case 10 | 11:
+                # cities and villages
+                pass
+            case 8 | 9:
+                # cities
+                pass
+            case 6 | 7:
+                # state cities and country
+                pass
+
+    def __annotate_streets__(self, ax, streets):
+        streets_dict = dict()
         for _, edge in streets.iterrows():
             text = edge["name"]
             if (text == "" or type(text) is not str): continue
-            idx = 1
-            # idx = int(len(edge["geometry"].coords) / 2)
-            if (idx <= 0): continue
-            a = edge["geometry"].coords[idx - 1]
-            b = edge["geometry"].coords[idx]
+            if (text not in streets_dict.keys()):
+                streets_dict[text] = []
+            else:
+                streets_dict[text].append(edge["geometry"])
+
+        import shapely as sh
+        for name, linestrings in streets_dict.items():
+            streets_dict[name] = [sh.line_merge(linestrings)]
+
+        for name, linestring in streets_dict.items():
+            a = linestring[0][0].coords[0]
+            b = linestring[0][0].coords[1]
+            delta = (a[1] - b[1], a[0] - b[0])
+            angle = numpy.rad2deg(numpy.atan2(delta[0], delta[1]))
+            if (angle > 90.0): angle = angle - 180
+            elif (angle < -90): angle = angle + 180
+            ax.annotate(name, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2),
+                        horizontalalignment = "center", verticalalignment= "center",
+                        transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
+                        color = "#000000", weight = "bold", fontsize= "small")
+
+        '''
+        for _, edge in streets.iterrows():
+            text = edge["name"]
+            if (text == "" or type(text) is not str): continue
+            a = edge["geometry"].coords[0]
+            b = edge["geometry"].coords[1]
             delta = (a[1] - b[1], a[0] - b[0])
             angle = numpy.rad2deg(numpy.atan2(delta[0], delta[1]))
             if (angle > 90.0): angle = angle - 180
@@ -57,7 +102,7 @@ class ToEPDFormat:
                                      horizontalalignment = "center", verticalalignment= "center",
                                      transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
                                      color = "#000000", weight = "bold", fontsize= "small")
-            bbox_a = plt.gca().transData.inverted().transform_bbox(annotation.get_window_extent())
+            bbox_a = ax.transData.inverted().transform_bbox(annotation.get_window_extent())
             s = edge["geometry"].coords[0]
             e = edge["geometry"].coords[-1]
             street_len = numpy.sqrt(numpy.power(s[0] - e[0], 2) + numpy.power(s[1] - e[1], 2))
@@ -65,10 +110,12 @@ class ToEPDFormat:
             if (label_len > street_len * 3000):
                 annotation.remove()
         '''
-
-        ax.set_xlim(map.bbox[0], map.bbox[2])
-        ax.set_ylim(map.bbox[1], map.bbox[3])
-        ax.set_facecolor("#ffffff")
-        plt.savefig("Map.png", bbox_inches = "tight", pad_inches = 0)
-        if (show): plt.show()
-        plt.close()
+    
+    def __annotate_buildings__(self, ax, buildings):
+        for _, build in buildings.iterrows():
+            point = build["geometry"].centroid
+            text = build["name"]
+            if (text == "" or type(text) is not str): text = build["addr:housenumber"]
+            if (text == "" or type(text) is not str): continue
+            ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment= "center")
+        return
