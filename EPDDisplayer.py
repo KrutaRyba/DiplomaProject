@@ -12,8 +12,10 @@ class EPDDisplayer:
         self.EPD = epd7in3f.EPD()
 
     def init_epd(self):
+        print("----- Start EPD init -----")
         self.EPD.init()
         self.EPD.Clear()
+        print("----- EPD init done -----")
 
     def sleep(self):
         self.EPD.sleep()

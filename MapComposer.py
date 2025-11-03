@@ -1,6 +1,6 @@
 from APIConnector import APIConnector
+from Utils import Utils
 from pandas import DataFrame
-from osmnx.projection import project_gdf
 
 class Features:
     def __init__(self):
@@ -20,43 +20,43 @@ class MapComposer:
 
     def compose(self, map):
         if (map.zoom == 19 or map.zoom == 18):
-            map.features, map.network = self.__zoom_level_close__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 8,
                                  "trunk": 7, "primary": 7, "secondary": 7, "tertiary": 7,
                                  "unclassified": 5, "residential": 5, "motorway_link": 5, "trunk_link": 5, "primary_link": 5, "secondary_link": 5, "tertiary_link": 5, "living_street": 5, "pedestrian": 5,
                                  "service": 3, "raceway": 3, "road": 3}
             map.railway_width = 2
         elif (map.zoom == 17 or map.zoom == 16):
-            map.features, map.network = self.__zoom_level_close__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 6,
                                  "trunk": 5, "primary": 5, "secondary": 5, "tertiary": 5,
                                  "unclassified": 3, "residential": 3, "motorway_link": 3, "trunk_link": 3, "primary_link": 3, "secondary_link": 3, "tertiary_link": 3, "living_street": 3, "pedestrian": 3}
             map.railway_width = 2
         elif (map.zoom == 15 or map.zoom == 14):
-            map.features, map.network = self.__zoom_level_medium_close__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_medium_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 4,
                                  "trunk": 3, "primary": 3, "secondary": 3, "tertiary": 3}
             map.railway_width = 1
         elif (map.zoom == 13 or map.zoom == 12):
-            map.features, map.network = self.__zoom_level_medium__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_medium(map.bbox, map.dist)
             map.street_widths = {"motorway": 3,
                                  "trunk": 2, "primary": 2, "secondary": 2, "tertiary": 2}
             map.railway_width = 1
         elif (map.zoom == 11 or map.zoom == 10):
-            map.features, map.network = self.__zoom_level_medium_far__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_medium_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
             map.railway_width = 1
         elif (map.zoom == 9 or map.zoom == 8):
-            map.features, map.network = self.__zoom_level_far__(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
             map.railway_width = 1
         elif (map.zoom == 7 or map.zoom == 6):
             return
-            map.features, map.network = self.__zoom_level_super_far__(map.bbox, map.dist)
+            map.features, map.network = self.__zoom_level_super_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 1}
             map.railway_width = 1
     
-    def __zoom_level_close__(self, bbox, dist):
+    def __zoom_level_close(self, bbox, dist):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -76,10 +76,14 @@ class MapComposer:
         network.highway = self.API.get_network(bbox, "all", None)
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'construction|disused|funicular|light_rail|miniature|monorail|narrow_gauge|rail|subway|tram']")
+        print("> Administrative levels")
+        admin_levels = DataFrame()
+        print("  Skipped")
         print("----- Download done -----")
-        return (features, network)
+        #amen = self.API.get_features(bbox, {"amenity": True})
+        return (features, network, admin_levels)
     
-    def __zoom_level_medium_close__(self, bbox, dist):
+    def __zoom_level_medium_close(self, bbox, dist):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -98,10 +102,12 @@ class MapComposer:
         network.highway = self.API.get_network(bbox, "drive", None)
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|monorail|narrow_gauge|rail|subway|tram']")
+        print("> Administrative levels")
+        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city"]})
         print("----- Download done -----")
-        return (features, network)
+        return (features, network, admin_levels)
     
-    def __zoom_level_medium__(self, bbox, dist):
+    def __zoom_level_medium(self, bbox, dist):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -112,21 +118,23 @@ class MapComposer:
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
                                              "leisure": ["park"],
                                              "natural": ["grassland", "heath", "scrub", "wood"]})
-        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
         features.sand = DataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
-        features.water = self.__filter_features_by_area__(water, dist / 2)
+        features.water = Utils.filter_features_by_area(water, dist)
         print("> Highway")
         network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary|secondary|tertiary|residential']")
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|narrow_gauge|rail']")
+        print("> Administrative levels")
+        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city"]})
         print("----- Download done -----")
-        return (features, network)
+        return (features, network, admin_levels)
     
-    def __zoom_level_medium_far__(self, bbox, dist):
+    def __zoom_level_medium_far(self, bbox, dist):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -136,21 +144,23 @@ class MapComposer:
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
                                              "natural": ["grassland", "heath", "scrub", "wood"]})
-        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
         features.sand = DataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
-        features.water = self.__filter_features_by_area__(water, dist / 2)
+        features.water = Utils.filter_features_by_area(water, dist)
         print("> Highway")
         network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary|secondary|tertiary']")
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
+        print("> Administrative levels")
+        admin_levels = self.API.get_features(bbox, {"place": ["town", "city"]})
         print("----- Download done -----")
-        return (features, network)
+        return (features, network, admin_levels)
     
-    def __zoom_level_far__(self, bbox, dist):
+    def __zoom_level_far(self, bbox, dist):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -160,30 +170,24 @@ class MapComposer:
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["farmland", "forest"],
                                              "natural": ["grassland"]})
-        features.grass = self.__filter_features_by_area__(grass, dist / 2)
+        features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
         features.sand = DataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["water"]})
-        features.water = self.__filter_features_by_area__(water, dist / 2)
+        features.water = Utils.filter_features_by_area(water, dist)
         print("> Highway")
         network.highway = self.API.get_network(bbox, None, "['highway'~'motorway|trunk|primary']")
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
+        print("> Administrative levels")
+        admin_levels = self.API.get_features(bbox, {"place": ["city"]})
         print("----- Download done -----")
-        return (features, network)
+        return (features, network, admin_levels)
     
-    def __zoom_level_super_far__(self, bbox, dist):
+    def __zoom_level_super_far(self, bbox, dist):
         features = Features()
         network = Network()
         # TODO: zoom levels 6 & 7
         return (features, network)
-    
-    def __filter_features_by_area__(self, features, area):
-        features = features[features.geometry.type.isin(["Polygon", "MultiPolygon"])]
-        features = project_gdf(features)
-        features["area"] = features["geometry"].area
-        features = features[features["area"] > area]
-        features = project_gdf(features, to_latlong = True)
-        return features

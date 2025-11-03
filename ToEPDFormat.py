@@ -1,3 +1,5 @@
+
+from Utils import Utils
 from osmnx import plot, graph_to_gdfs
 import matplotlib.pyplot as plt
 import numpy
@@ -26,47 +28,65 @@ class ToEPDFormat:
         ax.set_facecolor("#ffffff")
         fig = plt.gcf()
         tightbox = fig.get_tightbbox(fig.canvas.get_renderer())
-        self.__annotate__(ax, map)
+        self.__annotate(ax, map)
         plt.savefig("Map.png", bbox_inches = tightbox, pad_inches = 0, dpi = 150)
         if (show): plt.show()
         plt.close(fig)
 
-    def __annotate__(self, ax, map):
+    def __annotate(self, ax, map):
         match (map.zoom):
             case 18 | 19:
-               if (len(map.network.highway) != 0):
+                if (len(map.network.highway) != 0):
                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
-                   self.__annotate_streets__(ax, streets)
-               if (not map.features.buildings.empty): self.__annotate_buildings__(ax, map.features.buildings)
+                   self.__annotate_streets(ax, streets)
+                if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
+                # amenities
             case 16 | 17:
-                if (len(map.network.highway) == 0): return
-                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
-                self.__annotate_streets__(ax, streets)
+                if (len(map.network.highway) != 0):
+                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    self.__annotate_streets(ax, streets)
+                if (not map.features.buildings.empty):
+                    buildings = Utils.filter_features_by_area(map.features.buildings, map.dist * 2)
+                    self.__annotate_buildings(ax, buildings)
             case 14 | 15:
-                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
-                streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
-                self.__annotate_streets__(ax, streets)
-                # cities, villages and districts
+                if (len(map.network.highway) != 0):
+                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
+                    self.__annotate_streets(ax, streets)
+                if (not map.administrative_levels.empty):
+                    admin_levels =  map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
+                    self.__annotate_administrative_levels(ax, admin_levels)
             case 12 | 13:
-                streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
-                streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
-                self.__annotate_streets__(ax, streets)
-                # cities and villages
+                if (len(map.network.highway) != 0):
+                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
+                    self.__annotate_streets(ax, streets)
+                if (not map.administrative_levels.empty):
+                    admin_levels =  map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
+                    self.__annotate_administrative_levels(ax, admin_levels)
             case 10 | 11:
-                # cities and villages
-                pass
+                if (len(map.network.highway) != 0):
+                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = streets[streets["highway"].isin(["motorway"])]
+                    self.__annotate_streets(ax, streets)
+                if (not map.administrative_levels.empty):
+                    admin_levels =  map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
+                    self.__annotate_administrative_levels(ax, admin_levels)
             case 8 | 9:
-                # cities
+                if (not map.administrative_levels.empty):
+                    admin_levels =  map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
+                    self.__annotate_administrative_levels(ax, admin_levels)
                 pass
             case 6 | 7:
                 # state cities and country
                 pass
 
-    def __annotate_streets__(self, ax, streets):
+    def __annotate_streets(self, ax, streets):
         streets_dict = dict()
         for _, edge in streets.iterrows():
-            text = edge["name"]
-            if (text == "" or type(text) is not str): continue
+            try: text = edge["name"]
+            except (KeyError): continue
+            if (type(text) is not str): continue
             if (text not in streets_dict.keys()):
                 streets_dict[text] = []
             else:
@@ -86,7 +106,7 @@ class ToEPDFormat:
             ax.annotate(name, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2),
                         horizontalalignment = "center", verticalalignment= "center",
                         transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
-                        color = "#000000", weight = "bold", fontsize= "small")
+                        color = "#000000", fontsize= "small")
 
         '''
         for _, edge in streets.iterrows():
@@ -111,11 +131,29 @@ class ToEPDFormat:
                 annotation.remove()
         '''
     
-    def __annotate_buildings__(self, ax, buildings):
+    def __annotate_buildings(self, ax, buildings):
         for _, build in buildings.iterrows():
             point = build["geometry"].centroid
-            text = build["name"]
-            if (text == "" or type(text) is not str): text = build["addr:housenumber"]
-            if (text == "" or type(text) is not str): continue
+            try:
+                text = build["name"]
+                if (type(text) is not str): text = build["addr:housenumber"]
+            except (KeyError):
+                text = build["addr:housenumber"]
+            if (type(text) is not str): continue
             ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment= "center")
-        return
+
+    def __annotate_administrative_levels(self, ax, admin_levels):
+        for _, level in admin_levels.iterrows():
+            point = level["geometry"].centroid
+            try: text = level["name"]
+            except (KeyError): continue
+            if (type(text) is not str): continue
+            ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment= "center", weight = "bold", fontsize = "medium")
+
+    def __annotate_amenities(self, ax, amenities):
+        for _, build in amenities.iterrows():
+            point = build["geometry"].centroid
+            try: text = build["name"]
+            except (KeyError): continue
+            if (type(text) is not str): continue
+            ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment= "center")
