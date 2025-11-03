@@ -3,29 +3,32 @@ from pandas import DataFrame
 from networkx import MultiDiGraph
 from subprocess import check_call
 from re import findall
-import os
+from LinearFolderManager import LinearFolderManager
 
 class LocalConnector:
 
     def __init__(self, osm_file):
         self.osm_file = osm_file
+        self.f_manger = LinearFolderManager(".osm_tmp")
         self._cached_bbox = None
+
+    def __del__(self):
+        self.f_manger.cleanup()
 
     def get_features(self, bbox, tags):
         feature = DataFrame()
-        out_file = "out.osm.pbf"
-        true_out_file = "out.osm"
+        master_file = self.f_manger.get_path("out.osm.pbf", 0)
+        out_file = self.f_manger.get_path("out.osm", 0)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
-            self.__extract(bbox_str, out_file)
+            self.__extract(bbox_str, master_file)
             if (tags != None):
-                args = ["osmium", "tags-filter", "--overwrite", "-o", true_out_file, out_file] + self.__tags_to_args(tags)
-                print(args)
-                check_call(args)
+                args = ["osmium", "tags-filter", "--overwrite", "-o", out_file, master_file] + self.__tags_to_args(tags)
             else:
-                args = ["osmium", "cat", "--overwrite", "-o", true_out_file, out_file]
-                check_call(args)
-            feature = features.features_from_xml(true_out_file)
+                args = ["osmium", "cat", "--overwrite", "-o", out_file, master_file]
+            print(args)
+            check_call(args)
+            feature = features.features_from_xml(out_file)
         except Exception as e:
             print("  Not found")
             print(e)
@@ -33,18 +36,15 @@ class LocalConnector:
     
     def get_network(self, bbox, network_type = "all", custom_filter = None):
         network = MultiDiGraph()
-        out_file = "out.osm.pbf"
-        true_out_file = "out.osm"
+        master_file = self.f_manger.get_path("out.osm.pbf", 0)
+        out_file = self.f_manger.get_path("out.osm", 0)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
-            self.__extract(bbox_str, out_file)
+            self.__extract(bbox_str, master_file)
             tags = self.__filter_to_args(_overpass._get_network_filter(network_type)) if (custom_filter == None) \
                 else self.__filter_to_args(custom_filter)
-
-            self.__filter(tags, out_file, true_out_file)
-
-            
-            network = graph.graph_from_xml(true_out_file, retain_all = True)
+            self.__filter(tags, master_file, out_file)
+            network = graph.graph_from_xml(out_file, retain_all = True)
         except Exception as e:
             print("  Not found")
             print(e)
@@ -59,10 +59,9 @@ class LocalConnector:
     def __filter(self, tags, master_file, out_file):
         args = []
         counter = 0
-        folder = "tmp_osm"
-        if (not os.path.exists(folder)): os.mkdir(folder)
+        self.f_manger.create_folder("osm_filter", 0)
         for tag in tags:
-            tmp_file = os.path.join(folder, f"{counter}_tmp_out.osm.pbf")
+            tmp_file = self.f_manger.get_path(f"{counter}.osm.pbf", 1)
             counter += 1
             if ("=" in tag):
                 # Key-Value
@@ -72,14 +71,14 @@ class LocalConnector:
                     args = ["osmium", "tags-filter", "-i", "--overwrite", "-o", tmp_file, master_file, sub_tags[0]]
                     print(args)
                     check_call(args)
-                    tmp_file = os.path.join(folder, f"{counter}_tmp_out.osm.pbf")
+                    tmp_file = self.f_manger.get_path(f"{counter}.osm.pbf", 1)
                     args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, tag]
                     print(args)
                     check_call(args)
                     counter += 1
-                    tmp_file = os.path.join(folder, f"{counter}_tmp_out.osm.pbf")
-                    args = ["osmium", "merge", "--overwrite", "-o", tmp_file, os.path.join(folder, f"{counter - 2}_tmp_out.osm.pbf"), \
-                            os.path.join(folder, f"{counter - 1}_tmp_out.osm.pbf")]
+                    tmp_file = self.f_manger.get_path(f"{counter}.osm.pbf", 1)
+                    args = ["osmium", "merge", "--overwrite", "-o", tmp_file, self.f_manger.get_path(f"{counter - 2}.osm.pbf", 1), \
+                            self.f_manger.get_path(f"{counter - 1}.osm.pbf", 1)]
                     counter += 1
                 else:
                     args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, tag]
@@ -112,27 +111,3 @@ class LocalConnector:
     def __filter_to_args(self, filter: str) -> list[str]:
         elements = [x.replace("\"", "").replace("~", "=").replace("|", ",") for x in findall(r"[^\[\]]+", filter)]
         return elements
-    
-    def __idk(self):
-    #     filters["drive"] = (
-    #     f'["highway"]["area"!~"yes"]{settings.default_access}'
-    #     f'["highway"!~"abandoned|bridleway|bus_guideway|construction|corridor|'
-    #     f"cycleway|elevator|escalator|footway|no|path|pedestrian|planned|platform|"
-    #     f'proposed|raceway|razed|rest_area|service|services|steps|track"]'
-    #     f'["motor_vehicle"!~"no"]["motorcar"!~"no"]'
-    #     f'["service"!~"alley|driveway|emergency_access|parking|parking_aisle|private"]'
-    # )
-
-        return ('--keep="highway="', '--drop="( highway=abandoned or highway=bridleway or highway=foot or highway=path or highway=no ) and '
-                  'motor_vehicle=no and motorcar=no and ( service=alley or service=driveway or service=parking )"'
-                  )
-
-    # # drive+service: allow ways tagged 'service' but filter out certain types
-    # filters["drive_service"] = (
-    #     f'["highway"]["area"!~"yes"]{settings.default_access}'
-    #     f'["highway"!~"abandoned|bridleway|bus_guideway|construction|corridor|'
-    #     f"cycleway|elevator|escalator|footway|no|path|pedestrian|planned|platform|"
-    #     f'proposed|raceway|razed|rest_area|services|steps|track"]'
-    #     f'["motor_vehicle"!~"no"]["motorcar"!~"no"]'
-    #     f'["service"!~"emergency_access|parking|parking_aisle|private"]'
-    # )
