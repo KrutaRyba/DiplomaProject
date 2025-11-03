@@ -56,7 +56,7 @@ class MapComposer:
             map.street_widths = {"motorway": 1}
             map.railway_width = 1
     
-    def __zoom_level_close(self, bbox, dist):
+    def __zoom_level_close(self, bbox, _):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -83,7 +83,7 @@ class MapComposer:
         #amen = self.API.get_features(bbox, {"amenity": True})
         return (features, network, admin_levels)
     
-    def __zoom_level_medium_close(self, bbox, dist):
+    def __zoom_level_medium_close(self, bbox, _):
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -182,7 +182,7 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
         print("> Administrative levels")
-        admin_levels = self.API.get_features(bbox, {"place": ["city"]})
+        admin_levels = self.API.get_features(bbox, {"place": ["town", "city"]})
         print("----- Download done -----")
         return (features, network, admin_levels)
     

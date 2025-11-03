@@ -78,7 +78,7 @@ class ToEPDFormat:
                     self.__annotate_administrative_levels(ax, admin_levels)
                 pass
             case 6 | 7:
-                # state cities and country
+                # TODO: annotation for zoom levels 6 & 7 (state cities and country)
                 pass
 
     def __annotate_streets(self, ax, streets):

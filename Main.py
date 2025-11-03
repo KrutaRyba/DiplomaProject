@@ -1,30 +1,33 @@
 from MapComposer import MapComposer
 from ToEPDFormat import ToEPDFormat
-#from EPDDisplayer import EPDDisplayer
+from EPDDisplayer import EPDDisplayer
+from EPDDisplay import PhysicalEPD, EmulatedEPD
 from Map import Map
 
-show = True
-center_point = [50.635678, 26.212011] #50.624903/26.258266
-zoom_level = 10 # >= 9
+show = False
+center_point = [50.635678, 26.212011]
+zoom_level = 17 # >= 9
 
+#EPD = PhysicalEPD()
+EPD = EmulatedEPD()
+displayer = EPDDisplayer(EPD)
+displayer.init_epd()
 composer = MapComposer()
 toEPD = ToEPDFormat()
 map = Map(center_point, zoom_level)
 composer.compose(map)
 toEPD.convert(map, show)
-'''
-displayer = EPDDisplayer()
-displayer.init_epd()
 displayer.display()
 #displayer.sleep()
-'''
-exit()
+#exit()
+
 command = ""
 while(command != "exit"):
     command = input("Give input: ")
     match (command):
         case "exit":
             print("----- Exit -----")
+            displayer.sleep()
         case "zoom m":
             try:
                 zoom = int(input("Give zoom level: "))
@@ -35,7 +38,7 @@ while(command != "exit"):
                 map.zoom = zoom_level
                 composer.compose(map)
                 toEPD.convert(map, show)
-                #displayer.display()
+                displayer.display()
             except (ValueError):
                 print("Input: numbers from 6 to 19 (included)")
         case "h":
@@ -44,7 +47,7 @@ while(command != "exit"):
                 map.zoom = zoom_level
                 composer.compose(map)
                 toEPD.convert(map, show)
-                #displayer.display()
+                displayer.display()
             else: print("Already at max zoom level")
         case "l":
             if (zoom_level > 6):
@@ -52,7 +55,7 @@ while(command != "exit"):
                 map.zoom = zoom_level
                 composer.compose(map)
                 toEPD.convert(map, show)
-                #displayer.display()
+                displayer.display()
             else: print("Already at min zoom level")
         case "cp m":
             try:
@@ -61,9 +64,34 @@ while(command != "exit"):
                 map.center = center_point
                 composer.compose(map)
                 toEPD.convert(map, show)
-                #displayer.display()
+                displayer.display()
             except (ValueError):
                 print("Input: numbers from X to Y (included)")
-    
-
-#displayer.sleep()
+        case "w":
+            dist_y = (map.bbox[3] - map.bbox[1]) / 2
+            center_point[0] = center_point[0] + dist_y
+            map.center = center_point
+            composer.compose(map)
+            toEPD.convert(map, show)
+            displayer.display()
+        case "s":
+            dist_y = (map.bbox[3] - map.bbox[1]) / 2
+            center_point[0] = center_point[0] - dist_y
+            map.center = center_point
+            composer.compose(map)
+            toEPD.convert(map, show)
+            displayer.display()
+        case "a":
+            dist_x = (map.bbox[2] - map.bbox[0]) / 2
+            center_point[1] = center_point[1] - dist_x
+            map.center = center_point
+            composer.compose(map)
+            toEPD.convert(map, show)
+            displayer.display()
+        case "d":
+            dist_x = (map.bbox[2] - map.bbox[0]) / 2
+            center_point[1] = center_point[1] + dist_x
+            map.center = center_point
+            composer.compose(map)
+            toEPD.convert(map, show)
+            displayer.display()
