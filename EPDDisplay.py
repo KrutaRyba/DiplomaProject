@@ -34,13 +34,13 @@ class PhysicalEPD(EPDDisplay):
 
 class EmulatedEPD(EPDDisplay):
     def init(self):
-        print("Emulated EPD init")
+        print("<<Emulated EPD init>>")
         self.width = 800
         self.height = 480
     
     def sleep(self):
-        print("Emulated EPD sleep")
+        print("<<Emulated EPD sleep>>")
 
     def display_image(self, img):
-        print("Emulated EPD display_image")
+        print("<<Emulated EPD display_image>>")
         img.show()

@@ -3,10 +3,11 @@ from ToEPDFormat import ToEPDFormat
 from EPDDisplayer import EPDDisplayer
 from EPDDisplay import PhysicalEPD, EmulatedEPD
 from Map import Map
+from Utils import Utils
 
 show = False
 center_point = [50.635678, 26.212011]
-zoom_level = 17 # >= 9
+zoom_level = 16 # >= 9
 
 #EPD = PhysicalEPD()
 EPD = EmulatedEPD()
@@ -23,6 +24,7 @@ displayer.display()
 
 command = ""
 while(command != "exit"):
+    print(f"\nCurrent zoom: {zoom_level}, center point: {center_point}\n")
     command = input("Give input: ")
     match (command):
         case "exit":
@@ -30,7 +32,7 @@ while(command != "exit"):
             displayer.sleep()
         case "zoom m":
             try:
-                zoom = int(input("Give zoom level: "))
+                zoom = int(input("Give zoom level [zoom]: "))
                 if (zoom > 19 or zoom < 6):
                     print("Zoom level must be between 6 and 19 (included)")
                     continue
@@ -59,7 +61,7 @@ while(command != "exit"):
             else: print("Already at min zoom level")
         case "cp m":
             try:
-                cp = input("Give center point: ").split("/")
+                cp = input("Give center point [lon/lat]: ").split("/")
                 center_point = [float(cp[0]), float(cp[1])]
                 map.center = center_point
                 composer.compose(map)
@@ -68,29 +70,25 @@ while(command != "exit"):
             except (ValueError):
                 print("Input: numbers from X to Y (included)")
         case "w":
-            dist_y = (map.bbox[3] - map.bbox[1]) / 2
-            center_point[0] = center_point[0] + dist_y
+            center_point = Utils.add_meters_to_point_lon(center_point, map.dist)
             map.center = center_point
             composer.compose(map)
             toEPD.convert(map, show)
             displayer.display()
         case "s":
-            dist_y = (map.bbox[3] - map.bbox[1]) / 2
-            center_point[0] = center_point[0] - dist_y
+            center_point = Utils.add_meters_to_point_lon(center_point, -map.dist)
             map.center = center_point
             composer.compose(map)
             toEPD.convert(map, show)
             displayer.display()
         case "a":
-            dist_x = (map.bbox[2] - map.bbox[0]) / 2
-            center_point[1] = center_point[1] - dist_x
+            center_point = Utils.add_meters_to_point_lat(center_point, -map.dist)
             map.center = center_point
             composer.compose(map)
             toEPD.convert(map, show)
             displayer.display()
         case "d":
-            dist_x = (map.bbox[2] - map.bbox[0]) / 2
-            center_point[1] = center_point[1] + dist_x
+            center_point = Utils.add_meters_to_point_lat(center_point, map.dist)
             map.center = center_point
             composer.compose(map)
             toEPD.convert(map, show)

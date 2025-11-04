@@ -1,6 +1,7 @@
 from APIConnector import APIConnector
 from Utils import Utils
 from pandas import DataFrame
+from networkx import MultiDiGraph
 
 class Features:
     def __init__(self):
@@ -45,16 +46,15 @@ class MapComposer:
         elif (map.zoom == 11 or map.zoom == 10):
             map.features, map.network, map.administrative_levels = self.__zoom_level_medium_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
-            map.railway_width = 1
+            map.railway_width = 0.5
         elif (map.zoom == 9 or map.zoom == 8):
             map.features, map.network, map.administrative_levels = self.__zoom_level_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
-            map.railway_width = 1
+            map.railway_width = 0.5
         elif (map.zoom == 7 or map.zoom == 6):
-            return
             map.features, map.network = self.__zoom_level_super_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 1}
-            map.railway_width = 1
+            map.railway_width = 0
     
     def __zoom_level_close(self, bbox, _):
         features = Features()
@@ -77,8 +77,7 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'construction|disused|funicular|light_rail|miniature|monorail|narrow_gauge|rail|subway|tram']")
         print("> Administrative levels")
-        admin_levels = DataFrame()
-        print("  Skipped")
+        admin_levels = self.API.get_features(bbox, {"place": ["state", "country"]})
         print("----- Download done -----")
         #amen = self.API.get_features(bbox, {"amenity": True})
         return (features, network, admin_levels)
@@ -88,7 +87,7 @@ class MapComposer:
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
-        features.buildings = DataFrame()
+        features.buildings = self.API.get_features(bbox, {"building": True})
         print("  Skipped")
         print("> Grass")
         features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "orchard", "plant_nursery", "grass", "recreation_ground"],
@@ -103,7 +102,7 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|monorail|narrow_gauge|rail|subway|tram']")
         print("> Administrative levels")
-        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city"]})
+        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city", "state", "country"]})
         print("----- Download done -----")
         return (features, network, admin_levels)
     
@@ -130,7 +129,7 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'light_rail|narrow_gauge|rail']")
         print("> Administrative levels")
-        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city"]})
+        admin_levels = self.API.get_features(bbox, {"place": ["suburb", "village", "town", "city", "state", "country"]})
         print("----- Download done -----")
         return (features, network, admin_levels)
     
@@ -156,7 +155,7 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
         print("> Administrative levels")
-        admin_levels = self.API.get_features(bbox, {"place": ["town", "city"]})
+        admin_levels = self.API.get_features(bbox, {"place": ["town", "city", "state", "country"]})
         print("----- Download done -----")
         return (features, network, admin_levels)
     
@@ -182,12 +181,33 @@ class MapComposer:
         print("> Railway")
         network.railway = self.API.get_network(bbox, None, "['railway'~'rail']")
         print("> Administrative levels")
-        admin_levels = self.API.get_features(bbox, {"place": ["town", "city"]})
+        admin_levels = self.API.get_features(bbox, {"place": ["town", "city", "state", "country"]})
         print("----- Download done -----")
         return (features, network, admin_levels)
     
     def __zoom_level_super_far(self, bbox, dist):
         features = Features()
         network = Network()
-        # TODO: zoom levels 6 & 7
-        return (features, network)
+        print("----- Start download -----")
+        print("> Buildings")
+        features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Grass")
+        grass = self.API.get_features(bbox, {"landuse": ["farmland", "forest"],
+                                             "natural": ["grassland"]})
+        features.grass = Utils.filter_features_by_area(grass, dist)
+        print("> Sand")
+        features.sand = DataFrame()
+        print("  Skipped")
+        print("> Water")
+        water = self.API.get_features(bbox, {"natural": ["water"]})
+        features.water = Utils.filter_features_by_area(water, dist)
+        print("> Highway")
+        network.highway = self.API.get_network(bbox, None, "['highway'~'motorway']")
+        print("> Railway")
+        network.railway = MultiDiGraph()
+        print("  Skipped")
+        print("> Administrative levels")
+        admin_levels = self.API.get_features(bbox, {"place": ["state", "country"]})
+        print("----- Download done -----")
+        return (features, network, admin_levels)

@@ -1,9 +1,9 @@
 from osmnx import utils_geo
-import numpy
+from numpy import cos, radians, exp2
 
 class Map:
     def __init__(self, center, zoom):
-        self._center = center
+        self.__center = center
         self.__zoom = zoom
         self.dist = None
         self.bbox = None
@@ -15,7 +15,7 @@ class Map:
         self.__refresh()
 
     def __refresh(self):
-        self.dist = (40075016.686 * numpy.cos(numpy.radians(self.center[0]))) / numpy.exp2(self.zoom)
+        self.dist = (40075016.686 * cos(radians(self.center[0]))) / exp2(self.zoom)
         self.bbox = utils_geo.bbox_from_point(self.center, self.dist)
 
     @property
@@ -31,11 +31,11 @@ class Map:
 
     @property
     def center(self):
-        return self._center
+        return self.__center
     @center.setter
     def center(self, value):
-        self._center = value
+        self.__center = value
         self.__refresh()
     @center.deleter
     def center(self):
-        del self._center
+        del self.__center
