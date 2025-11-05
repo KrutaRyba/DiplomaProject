@@ -159,7 +159,7 @@ class ToEPDFormat:
             if (type(text) is not str): continue
             fontsize = "small"
             match (level["place"]):
-                case "country": fontsize = "x-larger"
+                case "country": fontsize = "x-large"
                 case "state": fontsize = "large"
                 case "city": fontsize = "medium"
                 case "town": fontsize = "small"

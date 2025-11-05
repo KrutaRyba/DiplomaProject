@@ -52,7 +52,7 @@ class MapComposer:
             map.street_widths = {"motorway": 2}
             map.railway_width = 0.5
         elif (map.zoom == 7 or map.zoom == 6):
-            map.features, map.network = self.__zoom_level_super_far(map.bbox, map.dist)
+            map.features, map.network, map.administrative_levels = self.__zoom_level_super_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 1}
             map.railway_width = 0
     
