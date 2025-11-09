@@ -4,11 +4,15 @@ from networkx import MultiDiGraph
 from subprocess import check_call
 from re import findall
 from LinearFolderManager import LinearFolderManager
+from json import load
 
 class LocalConnector:
 
-    def __init__(self, osm_file):
-        self.osm_file = osm_file
+    def __init__(self):
+        self.osm_file = None
+        with open("ServerConfig.json") as file:
+            self.osm_file = load(file)["osm_file"]
+        if (self.osm_file == None): raise RuntimeError("Specify an OSM file")
         self.f_manger = LinearFolderManager(".osm_tmp")
         self._cached_bbox = None
 
@@ -53,6 +57,7 @@ class LocalConnector:
     def __extract(self, bbox_str, out_file):
         if (self._cached_bbox == None or self._cached_bbox != bbox_str):
             args = ["osmium", "extract", "--bbox", bbox_str, "--overwrite", "-o", out_file, self.osm_file]
+            print(args)
             check_call(args)
             self._cached_bbox = bbox_str
 
