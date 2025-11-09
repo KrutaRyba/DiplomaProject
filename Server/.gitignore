@@ -1,0 +1,7 @@
+.DS_Store
+.osm_tmp/
+.venv/
+.vscode/
+__pycache__/
+Map.bmp
+Map.png
