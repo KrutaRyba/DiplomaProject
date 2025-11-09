@@ -68,11 +68,11 @@ class LocalConnector:
                 if ("!=" in tag):
                     # ?
                     sub_tags = tag.split("!=")
-                    args = ["osmium", "tags-filter", "-i", "--overwrite", "-o", tmp_file, master_file, sub_tags[0]]
+                    args = ["osmium", "tags-filter", "-i", "--overwrite", "-o", tmp_file, master_file, "w/" + sub_tags[0]]
                     print(args)
                     check_call(args)
                     tmp_file = self.f_manger.get_path(f"{counter}.osm.pbf", 1)
-                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, tag]
+                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, "w/" + tag]
                     print(args)
                     check_call(args)
                     counter += 1
@@ -81,13 +81,13 @@ class LocalConnector:
                             self.f_manger.get_path(f"{counter - 1}.osm.pbf", 1)]
                     counter += 1
                 else:
-                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, tag]
+                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, "w/" + tag]
             else:
                 # Key
                 if ("!=" in tag):
-                    args = ["osmium", "tags-filter", "-i", "--overwrite", "-o", tmp_file, master_file, tag]
+                    args = ["osmium", "tags-filter", "-i", "--overwrite", "-o", tmp_file, master_file, "w/" + tag]
                 else:
-                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, tag]
+                    args = ["osmium", "tags-filter", "--overwrite", "-o", tmp_file, master_file, "w/" + tag]
             print(args)
             check_call(args)
             master_file = tmp_file
@@ -109,5 +109,5 @@ class LocalConnector:
         return elements
 
     def __filter_to_args(self, filter: str) -> list[str]:
-        elements = [x.replace("\"", "").replace("~", "=").replace("|", ",") for x in findall(r"[^\[\]]+", filter)]
+        elements = [x.replace("\"", "").replace("'", "").replace("~", "=").replace("|", ",") for x in findall(r"[^\[\]]+", filter)]
         return elements
