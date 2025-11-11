@@ -1,6 +1,6 @@
 # Installation Process
 
-This instruction will allow you to configure your environment and install all the dependencies for this project.\
+This instruction will allow you to configure your environment and install all the dependencies for this project.
 
 Neither [Server Setup](#server-setup) nor [Client Setup](#client-setup) includes Python and Python Virtual Environment installation step.
 
@@ -181,4 +181,5 @@ pip install -r requirements.txt
 
 ```
 python3 Client.py
+
 ```
