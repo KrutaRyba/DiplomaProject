@@ -20,46 +20,41 @@ class MapComposer:
         self.API = LocalConnector()
 
     def compose(self, map):
-        old_zoom = map.zoom
-        if (old_zoom != 6 or old_zoom != 7): map.zoom = old_zoom - 2
-        map.refresh()
-        if (old_zoom == 19 or old_zoom == 18):
+        if (map.bbox_data == 19 or map.bbox_data == 18):
             map.features, map.network, map.administrative_levels = self.__zoom_level_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 8,
                                  "trunk": 7, "primary": 7, "secondary": 7, "tertiary": 7,
                                  "unclassified": 5, "residential": 5, "motorway_link": 5, "trunk_link": 5, "primary_link": 5, "secondary_link": 5, "tertiary_link": 5, "living_street": 5, "pedestrian": 5,
                                  "service": 3, "raceway": 3, "road": 3}
             map.railway_width = 2
-        elif (old_zoom == 17 or old_zoom == 16):
+        elif (map.bbox_data == 17 or map.bbox_data == 16):
             map.features, map.network, map.administrative_levels = self.__zoom_level_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 6,
                                  "trunk": 5, "primary": 5, "secondary": 5, "tertiary": 5,
                                  "unclassified": 3, "residential": 3, "motorway_link": 3, "trunk_link": 3, "primary_link": 3, "secondary_link": 3, "tertiary_link": 3, "living_street": 3, "pedestrian": 3}
             map.railway_width = 2
-        elif (old_zoom == 15 or old_zoom == 14):
+        elif (map.bbox_data == 15 or map.bbox_data == 14):
             map.features, map.network, map.administrative_levels = self.__zoom_level_medium_close(map.bbox, map.dist)
             map.street_widths = {"motorway": 4,
                                  "trunk": 3, "primary": 3, "secondary": 3, "tertiary": 3}
             map.railway_width = 1
-        elif (old_zoom == 13 or old_zoom == 12):
+        elif (map.bbox_data == 13 or map.bbox_data == 12):
             map.features, map.network, map.administrative_levels = self.__zoom_level_medium(map.bbox, map.dist)
             map.street_widths = {"motorway": 3,
                                  "trunk": 2, "primary": 2, "secondary": 2, "tertiary": 2}
             map.railway_width = 1
-        elif (old_zoom == 11 or old_zoom == 10):
+        elif (map.bbox_data == 11 or map.bbox_data == 10):
             map.features, map.network, map.administrative_levels = self.__zoom_level_medium_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
             map.railway_width = 0.5
-        elif (old_zoom == 9 or old_zoom == 8):
+        elif (map.bbox_data == 9 or map.bbox_data == 8):
             map.features, map.network, map.administrative_levels = self.__zoom_level_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 2}
             map.railway_width = 0.5
-        elif (old_zoom == 7 or old_zoom == 6):
+        elif (map.bbox_data == 7 or map.bbox_data == 6):
             map.features, map.network, map.administrative_levels = self.__zoom_level_super_far(map.bbox, map.dist)
             map.street_widths = {"motorway": 1}
             map.railway_width = 0
-        map.zoom = old_zoom
-        map.refresh()
     
     def __zoom_level_close(self, bbox, _):
         features = Features()

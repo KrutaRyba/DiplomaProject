@@ -1,5 +1,4 @@
 from osmnx import utils_geo
-from numpy import cos, radians, exp2
 from Utils import Utils
 
 class Map:
@@ -8,6 +7,7 @@ class Map:
         self.__zoom = zoom
         self.dist = None
         self.bbox = None
+        self.bbox_data = None
         self.features = None
         self.network = None
         self.administrative_levels = None
@@ -18,6 +18,7 @@ class Map:
     def refresh(self):
         self.dist = Utils.horizontal_distance(self.center[0], self.zoom)
         self.bbox = utils_geo.bbox_from_point(self.center, self.dist)
+        self.bbox_data = utils_geo.bbox_from_point(self.center, Utils.horizontal_distance(self.center[0], max(self.zoom - 2, 4)))
 
     @property
     def zoom(self):

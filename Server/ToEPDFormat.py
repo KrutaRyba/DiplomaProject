@@ -1,12 +1,16 @@
 from Utils import Utils
 from osmnx import plot, graph_to_gdfs
 from matplotlib.patheffects import withStroke
-from shapely import line_merge
+from shapely import line_merge, MultiLineString
 from numpy import rad2deg, atan2
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
+class Street:
+    def __init__(self, name):
+        self.name = name
+        self.sub_streets = []
 
 class ToEPDFormat:
     def convert(self, map, show):
@@ -31,8 +35,7 @@ class ToEPDFormat:
             if (not admin_levels.empty):
                 _, ax = plot.plot_footprints(admin_levels, ax = ax, color = "none", edge_color = "#000000", edge_linewidth = 1, show = False, close = False)
         
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
+        ax.set_axis_off()
         ax.set_xlim(map.bbox[0], map.bbox[2])
         ax.set_ylim(map.bbox[1], map.bbox[3])
         ax.set_facecolor("#ffffff")
@@ -92,55 +95,62 @@ class ToEPDFormat:
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
 
+    def __search_tail(self, node, linestrings, checked, line):
+        adjacent_lines = []
+        for linestring, check in zip(linestrings, checked):
+            if (check): continue
+            if (node.coords[0] == linestring.coords[-1] or node.coords[0] == linestring.coords[0] or node.coords[-1] == linestring.coords[0] or node.coords[-1] == linestring.coords[-1]):
+                adjacent_lines.append(linestring)
+        # check if intersection or one line per side
+        if (len(adjacent_lines) == 2):
+            # intersection
+            if (adjacent_lines[0].coords[0] == adjacent_lines[1].coords[-1] or adjacent_lines[0].coords[0] == adjacent_lines[1].coords[0] or adjacent_lines[0].coords[-1] == adjacent_lines[1].coords[0] or adjacent_lines[0].coords[-1] == adjacent_lines[1].coords[-1]):
+                return
+        if (len(adjacent_lines) > 2 or len(adjacent_lines) == 0): return
+        line.append(adjacent_lines[0])
+        checked[linestrings.index(adjacent_lines[0])] = True
+        self.__search_tail(adjacent_lines[0], linestrings, checked, line)
+
     def __annotate_streets(self, ax, streets):
         streets_dict = dict()
         for _, edge in streets.iterrows():
             try: text = edge["name"]
             except (KeyError): continue
-            if (type(text) is not str): continue
+            if (text == "" or type(text) is not str): continue
             if (text not in streets_dict.keys()):
                 streets_dict[text] = []
+                streets_dict[text].append(edge["geometry"])
             else:
                 streets_dict[text].append(edge["geometry"])
-
+        
+        streets = []  
         for name, linestrings in streets_dict.items():
-            streets_dict[name] = [line_merge(linestrings)]
+            street = Street(name)
+            checked = [False] * len(linestrings)
+            for linestring, check in zip(linestrings, checked):
+                if (check): continue
+                line = [linestring]
+                checked[linestrings.index(linestring)] = True
+                self.__search_tail(linestring, linestrings, checked, line)
+                # in case first linestring is not borderline
+                self.__search_tail(linestring, linestrings, checked, line)
+                street.sub_streets.append(line_merge(MultiLineString(line)))
+            streets.append(street)
 
-        for name, linestring in streets_dict.items():
-            a = linestring[0][0].coords[0]
-            b = linestring[0][0].coords[1]
-            delta = (a[1] - b[1], a[0] - b[0])
-            angle = rad2deg(atan2(delta[0], delta[1]))
-            if (angle > 90.0): angle = angle - 180
-            elif (angle < -90): angle = angle + 180
-            txt = ax.annotate(name, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2),
-                        horizontalalignment = "center", verticalalignment = "center",
-                        transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
-                        color = "#000000", fontsize = "small")
-            txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
-
-        '''
-        for _, edge in streets.iterrows():
-            text = edge["name"]
-            if (text == "" or type(text) is not str): continue
-            a = edge["geometry"].coords[0]
-            b = edge["geometry"].coords[1]
-            delta = (a[1] - b[1], a[0] - b[0])
-            angle = numpy.rad2deg(numpy.atan2(delta[0], delta[1]))
-            if (angle > 90.0): angle = angle - 180
-            elif (angle < -90): angle = angle + 180
-            annotation = ax.annotate(text, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2),
-                                     horizontalalignment = "center", verticalalignment= "center",
-                                     transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
-                                     color = "#000000", weight = "bold", fontsize= "small")
-            bbox_a = ax.transData.inverted().transform_bbox(annotation.get_window_extent())
-            s = edge["geometry"].coords[0]
-            e = edge["geometry"].coords[-1]
-            street_len = numpy.sqrt(numpy.power(s[0] - e[0], 2) + numpy.power(s[1] - e[1], 2))
-            label_len = numpy.sqrt(numpy.power(bbox_a.x0 - bbox_a.x1, 2) + numpy.power(bbox_a.y0 - bbox_a.y1, 2))
-            if (label_len > street_len * 3000):
-                annotation.remove()
-        '''
+        for street in streets:
+            for sub_street in street.sub_streets:
+                a = sub_street.coords[0]
+                b = sub_street.coords[-1]
+                delta = (a[1] - b[1], a[0] - b[0])
+                angle = rad2deg(atan2(delta[0], delta[1]))
+                if (angle > 90.0): angle = angle - 180
+                elif (angle < -90): angle = angle + 180
+                point = sub_street.centroid
+                txt = ax.annotate(street.name, (point.x, point.y),
+                                  horizontalalignment = "center", verticalalignment = "center",
+                                  transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
+                                  color = "#000000", fontsize = "x-small")
+                txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
     
     def __annotate_buildings(self, ax, buildings):
         for _, build in buildings.iterrows():

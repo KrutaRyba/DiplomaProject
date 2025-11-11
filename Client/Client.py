@@ -7,7 +7,7 @@ from Utils import Utils
 from json import load
 
 center_point = [50.635678, 26.212011]
-zoom_level = 17 # >= 9
+zoom_level = 16
 
 #EPD = PhysicalEPD()
 EPD = EmulatedEPD()

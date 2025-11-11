@@ -13,13 +13,7 @@ class EPDDisplay(ABC):
 
 class PhysicalEPD(EPDDisplay):
     def init(self):
-        import sys
-        import os
-        libdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib')
-        if os.path.exists(libdir):
-            sys.path.append(libdir)
         from waveshare_epd import epd7in3f
-
         self.EPD = epd7in3f.EPD()
         self.EPD.init()
         self.EPD.Clear()
