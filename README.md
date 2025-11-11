@@ -1,7 +1,8 @@
 # Installation Process
 
-This instruction will allow you to configure your environment and install all the dependencies for this project.
-Neither [Server Setup](#server-setup) nor [Client Setup](#client-setup) includes Python installation step.
+This instruction will allow you to configure your environment and install all the dependencies for this project.\
+
+Neither [Server Setup](#server-setup) nor [Client Setup](#client-setup) includes Python and Python Virtual Environment installation step.
 
 ## Server Setup
 
@@ -18,9 +19,23 @@ Assumptions:
 sudo apt-get install osmium-tool
 ```
 
-**macOs**
+**macOS**
 ```
 sudo brew osmium-tool
+```
+
+<a name="server-ip"></a>
+2. Take a note of the IP address
+
+```
+ifconfig
+```
+
+<a name="osm-file"></a>
+3. Download the OSM data
+
+```
+wget https://download.geofabrik.de/europe/ukraine-latest.osm.pbf
 ```
 
 ### Installing the Server
@@ -50,7 +65,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. Start the Server
+5. Edit ServerConfig.json
+
+```
+"osm_file":"[path_to_the_osm_file](#osm-file)"
+```
+
+6. Start the Server
 
 ```
 python3 Server.py
@@ -62,7 +83,7 @@ Assumptions:
 - Client has python3 installed
 - Client has python3-virtualenv installed
 - Client is running on Raspberry Pi
-- Client is (correctly) connected to Waveshare 7.3-inch e-Paper HAT (F) display
+- Client is (correctly) connected to the Waveshare 7.3-inch e-Paper HAT (F) display
 
 ### Configuring Raspberry Pi
 
@@ -98,7 +119,7 @@ sudo apt-get update
 sudo apt install python3-gpiozero
 ```
 
-### Instaling the E-Paper Library
+### Installing the E-Paper Library
 
 1. Download the demo
 
@@ -138,7 +159,7 @@ cd DiplomaProject/Client
 2. Create venv
 
 ```
-python3 -m venv .venv
+python3 -m venv .venv --system-site-packages
 ```
 
 3. Activate venv
@@ -152,7 +173,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. Start the Client
+5. Edit ClientConfig.json
+
+```
+"server_ip":"[server_ip](#server-ip)</a>",
+```
+
+6. Start the Client
 
 ```
 python3 Client.py
