@@ -24,14 +24,12 @@ sudo apt-get install osmium-tool
 sudo brew osmium-tool
 ```
 
-<a name="server-ip"></a>
 2. Take a note of the IP address
 
 ```
 ifconfig
 ```
 
-<a name="osm-file"></a>
 3. Download the OSM data
 
 ```
@@ -68,7 +66,7 @@ pip install -r requirements.txt
 5. Edit ServerConfig.json
 
 ```
-"osm_file":"[path_to_the_osm_file](#osm-file)"
+"osm_file":"[path_to_the_osm_file]"
 ```
 
 6. Start the Server
@@ -176,7 +174,7 @@ pip install -r requirements.txt
 5. Edit ClientConfig.json
 
 ```
-"server_ip":"[server_ip](#server-ip)</a>",
+"server_ip":"[server_ip]",
 ```
 
 6. Start the Client
