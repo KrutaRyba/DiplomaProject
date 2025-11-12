@@ -1,5 +1,6 @@
 from Utils import Utils
 from osmnx import plot, graph_to_gdfs
+from osmnx.convert import to_undirected
 from matplotlib.patheffects import withStroke
 from shapely import line_merge, MultiLineString
 from numpy import rad2deg, atan2
@@ -52,7 +53,8 @@ class ToEPDFormat:
             case 18 | 19:
                 if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
                 if (len(map.network.highway) != 0):
-                   streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                   streets = to_undirected(map.network.highway)
+                   streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                    self.__annotate_streets(ax, streets)
                 # amenities
             case 16 | 17:
@@ -60,29 +62,33 @@ class ToEPDFormat:
                     buildings = Utils.filter_features_by_area(map.features.buildings, map.dist * 2)
                     self.__annotate_buildings(ax, buildings)
                 if (len(map.network.highway) != 0):
-                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = to_undirected(map.network.highway)
+                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     self.__annotate_streets(ax, streets)
             case 14 | 15:
                 if (len(map.network.highway) != 0):
-                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = to_undirected(map.network.highway)
+                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
-                    self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
             case 12 | 13:
                 if (len(map.network.highway) != 0):
-                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = to_undirected(map.network.highway)
+                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
-                    self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
             case 10 | 11:
                 if (len(map.network.highway) != 0):
-                    streets = graph_to_gdfs(map.network.highway, nodes = False, fill_edge_geometry = True).fillna('')
+                    streets = to_undirected(map.network.highway)
+                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway"])]
-                    self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
