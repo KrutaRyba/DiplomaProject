@@ -10,6 +10,9 @@ class EPDDisplay(ABC):
     @abstractmethod
     def display_image(self, buffer):
         pass
+    @abstractmethod
+    def exit(self):
+        pass
 
 class PhysicalEPD(EPDDisplay):
     def init(self):
@@ -26,6 +29,10 @@ class PhysicalEPD(EPDDisplay):
     def display_image(self, img):
         self.EPD.display(self.EPD.getbuffer(img))
 
+    def exit(self):
+        from waveshare_epd import epd7in3f
+        epd7in3f.epdconfig.module_exit(cleanup=True)
+
 class EmulatedEPD(EPDDisplay):
     def init(self):
         print("<<Emulated EPD init>>")
@@ -38,3 +45,6 @@ class EmulatedEPD(EPDDisplay):
     def display_image(self, img):
         print("<<Emulated EPD display_image>>")
         img.show()
+
+    def exit(self):
+        print("<<Emulated EPD exit>>")

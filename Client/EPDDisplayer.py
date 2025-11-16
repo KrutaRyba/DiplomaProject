@@ -24,3 +24,6 @@ class EPDDisplayer:
         img = Image.open("Map.bmp")
         self.EPD.display_image(img)
         img.close()
+
+    def exit(self):
+        self.EPD.exit()

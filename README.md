@@ -132,18 +132,6 @@ wget https://files.waveshare.com/upload/7/71/E-Paper_code.zip
 unzip E-Paper_code.zip -d e-Paper
 ```
 
-2. Add folder \<path_to_your_folder\>/e-Paper/RaspberryPi_JetsonNano/python/lib/ to the PATH variable
-
-```
-sudoedit /etc/environment
-```
-
-3. Apply change
-
-```
-source /etc/environment
-```
-
 ### Installing the Client
 
 1. Download the Client (skip if already done so in the [Server Setup](#server-setup))
@@ -177,7 +165,13 @@ pip install -r requirements.txt
 "server_ip":"[server_ip]",
 ```
 
-6. Start the Client
+6. Add E-Paper Library to the Client files
+
+```
+cp \<path_to_epaper_folder\>/RaspberryPi_JetsonNano/python/lib/ \<path_to_client_folder\>
+```
+
+7. Start the Client
 
 ```
 python3 Client.py
