@@ -5,7 +5,7 @@ from matplotlib.patheffects import withStroke
 from shapely import line_merge, MultiLineString
 from numpy import rad2deg, atan2
 import matplotlib
-matplotlib.use('agg')
+matplotlib.use("agg")
 import matplotlib.pyplot as plt
 
 class Street:
@@ -51,26 +51,26 @@ class ToEPDFormat:
     def __annotate(self, ax, map):
         match (map.zoom):
             case 18 | 19:
-                if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
                 if (len(map.network.highway) != 0):
                    streets = to_undirected(map.network.highway)
                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
-                   self.__annotate_streets(ax, streets)
+                   self.__annotate_streets(ax, streets, map.dist)
+                if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
                 # amenities
             case 16 | 17:
-                if (not map.features.buildings.empty):
-                    buildings = Utils.filter_features_by_area(map.features.buildings, map.dist * 2)
-                    self.__annotate_buildings(ax, buildings)
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
-                    self.__annotate_streets(ax, streets)
+                    self.__annotate_streets(ax, streets, map.dist)
+                if (not map.features.buildings.empty):
+                    buildings = Utils.filter_features_by_area(map.features.buildings, map.dist * 2)
+                    self.__annotate_buildings(ax, buildings)
             case 14 | 15:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
@@ -79,7 +79,7 @@ class ToEPDFormat:
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
@@ -88,7 +88,7 @@ class ToEPDFormat:
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
@@ -102,22 +102,21 @@ class ToEPDFormat:
                     self.__annotate_administrative_levels(ax, admin_levels)
 
     def __search_tail(self, node, linestrings, checked, line):
-        adjacent_lines = []
+        adjacent_lines_0 = []
+        adjacent_lines_1 = []
         for linestring, check in zip(linestrings, checked):
             if (check): continue
-            if (node.coords[0] == linestring.coords[-1] or node.coords[0] == linestring.coords[0] or node.coords[-1] == linestring.coords[0] or node.coords[-1] == linestring.coords[-1]):
-                adjacent_lines.append(linestring)
-        # check if intersection or one line per side
-        if (len(adjacent_lines) == 2):
-            # intersection
-            if (adjacent_lines[0].coords[0] == adjacent_lines[1].coords[-1] or adjacent_lines[0].coords[0] == adjacent_lines[1].coords[0] or adjacent_lines[0].coords[-1] == adjacent_lines[1].coords[0] or adjacent_lines[0].coords[-1] == adjacent_lines[1].coords[-1]):
-                return
-        if (len(adjacent_lines) > 2 or len(adjacent_lines) == 0): return
-        line.append(adjacent_lines[0])
-        checked[linestrings.index(adjacent_lines[0])] = True
-        self.__search_tail(adjacent_lines[0], linestrings, checked, line)
+            if (node[0].coords[0] == linestring[0].coords[0] or node[0].coords[0] == linestring[0].coords[-1]): adjacent_lines_0.append(linestring)
+            if (node[0].coords[-1] == linestring[0].coords[0] or node[0].coords[-1] == linestring[0].coords[-1]): adjacent_lines_1.append(linestring)
+        if (len(adjacent_lines_0) != 1 and len(adjacent_lines_1) != 1): return
+        adjacent_line = None
+        if (len(adjacent_lines_0) == 1): adjacent_line = adjacent_lines_0[0]
+        if (len(adjacent_lines_1) == 1): adjacent_line = adjacent_lines_1[0]
+        line.append(adjacent_line)
+        checked[linestrings.index(adjacent_line)] = True
+        self.__search_tail(adjacent_line, linestrings, checked, line)
 
-    def __annotate_streets(self, ax, streets):
+    def __annotate_streets(self, ax, streets, dist):
         streets_dict = dict()
         for _, edge in streets.iterrows():
             try: text = edge["name"]
@@ -125,11 +124,11 @@ class ToEPDFormat:
             if (text == "" or type(text) is not str): continue
             if (text not in streets_dict.keys()):
                 streets_dict[text] = []
-                streets_dict[text].append(edge["geometry"])
+                streets_dict[text].append([edge["geometry"], edge["length"]])
             else:
-                streets_dict[text].append(edge["geometry"])
+                streets_dict[text].append([edge["geometry"], edge["length"]])
         
-        streets = []  
+        streets_merged = []  
         for name, linestrings in streets_dict.items():
             street = Street(name)
             checked = [False] * len(linestrings)
@@ -138,25 +137,42 @@ class ToEPDFormat:
                 line = [linestring]
                 checked[linestrings.index(linestring)] = True
                 self.__search_tail(linestring, linestrings, checked, line)
-                # in case first linestring is not borderline
                 self.__search_tail(linestring, linestrings, checked, line)
-                street.sub_streets.append(line_merge(MultiLineString(line)))
-            streets.append(street)
+                line_0 = [lstr[0] for lstr in line]
+                line_1 = [lstr[1] for lstr in line]
+                street.sub_streets.append({"lstr": line_merge(MultiLineString(line_0)), "len": sum(line_1)})
+            streets_merged.append(street)
 
-        for street in streets:
+        for street in streets_merged:
             for sub_street in street.sub_streets:
-                a = sub_street.coords[0]
-                b = sub_street.coords[-1]
-                delta = (a[1] - b[1], a[0] - b[0])
-                angle = rad2deg(atan2(delta[0], delta[1]))
-                if (angle > 90.0): angle = angle - 180
-                elif (angle < -90): angle = angle + 180
-                point = sub_street.centroid
-                txt = ax.annotate(street.name, (point.x, point.y),
-                                  horizontalalignment = "center", verticalalignment = "center",
-                                  transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
-                                  color = "#000000", fontsize = "x-small")
-                txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
+                if (sub_street["len"] < dist / 3): continue
+                points = [0.5]
+                if (sub_street["len"] > dist and sub_street["len"] < dist * 2): points = [0.25, 0.75]
+                if (sub_street["len"] > dist * 2): points = [0.25, 0.5, 0.75]
+                for point in points:
+                    point1 = sub_street["lstr"].interpolate(point - 0.1, normalized = True)
+                    point2 = sub_street["lstr"].interpolate(point + 0.1, normalized = True)
+                    a = (point1.x, point1.y)
+                    b = (point2.x, point2.y)
+                    delta = (a[1] - b[1], a[0] - b[0])
+                    angle = rad2deg(atan2(delta[0], delta[1]))
+                    if (angle > 90.0): angle = angle - 180
+                    elif (angle < -90.0): angle = angle + 180
+                    point3 = sub_street["lstr"].interpolate(point, normalized = True)
+                    txt = ax.annotate(street.name, (point3.x, point3.y),
+                                      horizontalalignment = "center", verticalalignment = "center",
+                                      transform_rotates_text = True, rotation_mode = "anchor", rotation = angle,
+                                      color = "#000000", fontsize = "x-small")
+                    txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
+    
+    def __split_by_n(self, text, n):
+        text = text.split(" ")
+        lines = ""
+        for i in range(0, len(text), n):
+            lines = lines + text[i]
+            if (i >= len(text) - 1): break
+            else: lines = lines + " " + text[i + 1] + "\n"
+        return lines
     
     def __annotate_buildings(self, ax, buildings):
         for _, build in buildings.iterrows():
@@ -167,7 +183,8 @@ class ToEPDFormat:
             except (KeyError):
                 text = build["addr:housenumber"]
             if (type(text) is not str): continue
-            txt = ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", fontsize = "x-small")
+            lines = self.__split_by_n(text, 2)
+            txt = ax.annotate(lines, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", fontsize = "xx-small")
             txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
 
     def __annotate_administrative_levels(self, ax, admin_levels):
@@ -193,4 +210,6 @@ class ToEPDFormat:
             try: text = build["name"]
             except (KeyError): continue
             if (type(text) is not str): continue
-            ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center")
+            lines = self.__split_by_n(text, 2)
+            txt = ax.annotate(lines, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", fontsize = "xx-small")
+            txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
