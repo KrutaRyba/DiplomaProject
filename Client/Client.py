@@ -1,10 +1,10 @@
-from requests import ConnectTimeout, get
-from PIL import Image
-from io import BytesIO
-from EPDDisplayer import EPDDisplayer
 from EPDDisplay import PhysicalEPD, EmulatedEPD
-from Utils import Utils
+from EPDDisplayer import EPDDisplayer
+from io import BytesIO
 from json import load
+from PIL import Image
+from requests import ConnectTimeout, get
+from Utils import Utils
 
 try:
     SERVER_IP = None

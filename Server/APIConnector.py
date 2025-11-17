@@ -1,6 +1,6 @@
+from networkx import MultiDiGraph
 from osmnx import features, graph, _errors
 from pandas import DataFrame
-from networkx import MultiDiGraph
 
 class APIConnector:
     def get_features(self, bbox, tags):

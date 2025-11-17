@@ -5,7 +5,7 @@ class LinearFolderManager:
     
     def __init__(self, folder = "."):
         self.folders = [folder]
-        if (not path.exists(folder)): mkdir(folder)
+        if (not path.exists(folder)): mkdir(self.folders[0])
 
     def create_folder(self, folder, level):
         self.folders.append(folder)
@@ -15,6 +15,6 @@ class LinearFolderManager:
     def get_path(self, file, level):
         ret = path.join(*(self.folders[0:level + 1]))
         return path.join(ret, file)
-    
+
     def cleanup(self):
         rmtree(self.folders[0])

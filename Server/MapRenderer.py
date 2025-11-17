@@ -1,20 +1,21 @@
-from Utils import Utils
+from matplotlib.patheffects import withStroke
+from numpy import rad2deg, atan2
 from osmnx import plot, graph_to_gdfs
 from osmnx.convert import to_undirected
-from matplotlib.patheffects import withStroke
 from shapely import line_merge, MultiLineString
-from numpy import rad2deg, atan2
+from Utils import Utils
+from Utils import Utils, Definitions
 import matplotlib
-matplotlib.use("agg")
 import matplotlib.pyplot as plt
+matplotlib.use("agg")
 
 class Street:
     def __init__(self, name):
         self.name = name
         self.sub_streets = []
 
-class ToEPDFormat:
-    def convert(self, map, show):
+class MapRenderer:
+    def render(self, map, show):
         ax = plt.gca()
         # Features
         if (not map.features.grass.empty):
@@ -44,7 +45,7 @@ class ToEPDFormat:
         fig.set_size_inches(8, 8)
         tightbox = fig.get_tightbbox(fig.canvas.get_renderer())
         self.__annotate(ax, map)
-        plt.savefig("Map.png", bbox_inches = tightbox, pad_inches = 0, dpi = 150)
+        plt.savefig(Utils.find_file("Map.png", Definitions.MAP_FOLDER), bbox_inches = tightbox, pad_inches = 0, dpi = 150)
         if (show): plt.show()
         plt.close(fig)
 
@@ -98,7 +99,7 @@ class ToEPDFormat:
                     self.__annotate_administrative_levels(ax, admin_levels)
             case 6 | 7:
                 if (not map.administrative_levels.empty):
-                    admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
+                    admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])] #& map.administrative_levels["place"].isin(["state", "country"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
 
     def __search_tail(self, node, linestrings, checked, line):

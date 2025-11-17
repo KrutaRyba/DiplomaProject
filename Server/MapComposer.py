@@ -1,8 +1,8 @@
-from LocalConnector import LocalConnector
 from APIConnector import APIConnector
-from Utils import Utils
-from pandas import DataFrame
+from LocalConnector import LocalConnector
 from networkx import MultiDiGraph
+from pandas import DataFrame
+from Utils import Utils
 
 class Features:
     def __init__(self):
@@ -19,7 +19,7 @@ class Network:
 
 class MapComposer:
     def __init__(self):
-        self.API = APIConnector()
+        self.API = LocalConnector()
 
     def compose(self, map):
         if (map.zoom == 19 or map.zoom == 18):
