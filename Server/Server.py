@@ -7,7 +7,7 @@ from Utils import Utils, Definitions
 
 app = Flask(__name__)
 
-show = True
+show = False
 center_point = (50.635678, 26.212011)
 zoom_level = 16
 
