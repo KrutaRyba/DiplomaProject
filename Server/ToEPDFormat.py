@@ -56,7 +56,7 @@ class ToEPDFormat:
                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                    self.__annotate_streets(ax, streets, map.dist)
                 if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
-                # amenities
+                if (not map.features.amenities.empty): self.__annotate_amenities(ax, map.features.amenities)
             case 16 | 17:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)

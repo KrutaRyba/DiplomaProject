@@ -10,6 +10,7 @@ class Features:
         self.grass = None
         self.sand = None
         self.water = None
+        self.amenities = None
 
 class Network:
     def __init__(self):
@@ -63,6 +64,8 @@ class MapComposer:
         print("----- Start download -----")
         print("> Buildings")
         features.buildings = self.API.get_features(bbox, {"building": True})
+        print("> Amenities")
+        features.amenities = self.API.get_features(bbox, {"amenity": True})
         print("> Grass")
         features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "flowerbed", "forest", "meadow", "orchard", "plant_nursery", "vineyard", "cemetery", "grass", "recreation_ground", "village_green"],
                                                       "leisure": ["garden", "park", "pitch"],
@@ -89,6 +92,8 @@ class MapComposer:
         print("----- Start download -----")
         print("> Buildings")
         features.buildings = self.API.get_features(bbox, {"building": True})
+        print("> Amenities")
+        features.amenities = DataFrame()
         print("  Skipped")
         print("> Grass")
         features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "orchard", "plant_nursery", "grass", "recreation_ground"],
@@ -113,6 +118,9 @@ class MapComposer:
         print("----- Start download -----")
         print("> Buildings")
         features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Amenities")
+        features.amenities = DataFrame()
         print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
@@ -141,6 +149,9 @@ class MapComposer:
         print("> Buildings")
         features.buildings = DataFrame()
         print("  Skipped")
+        print("> Amenities")
+        features.amenities = DataFrame()
+        print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
                                              "natural": ["grassland", "heath", "scrub", "wood"]})
@@ -167,6 +178,9 @@ class MapComposer:
         print("> Buildings")
         features.buildings = DataFrame()
         print("  Skipped")
+        print("> Amenities")
+        features.amenities = DataFrame()
+        print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"natural": ["grassland"]})
         features.grass = Utils.filter_features_by_area(grass, dist)
@@ -191,6 +205,9 @@ class MapComposer:
         print("----- Start download -----")
         print("> Buildings")
         features.buildings = DataFrame()
+        print("  Skipped")
+        print("> Amenities")
+        features.amenities = DataFrame()
         print("  Skipped")
         print("> Grass")
         features.grass = DataFrame()
