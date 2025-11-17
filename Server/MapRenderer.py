@@ -1,21 +1,20 @@
+from geopandas import GeoDataFrame
 from matplotlib.patheffects import withStroke
+from matplotlib.axes import Axes
 from numpy import rad2deg, atan2
 from osmnx import plot, graph_to_gdfs
 from osmnx.convert import to_undirected
-from shapely import line_merge, MultiLineString
+from shapely import LineString, line_merge, MultiLineString
+from Map import Map
 from Utils import Utils
 from Utils import Utils, Definitions
+from DataFrames import Street
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use("agg")
 
-class Street:
-    def __init__(self, name):
-        self.name = name
-        self.sub_streets = []
-
 class MapRenderer:
-    def render(self, map, show):
+    def render(self, map: Map, show: bool) -> None:
         ax = plt.gca()
         # Features
         if (not map.features.grass.empty):
@@ -49,7 +48,7 @@ class MapRenderer:
         if (show): plt.show()
         plt.close(fig)
 
-    def __annotate(self, ax, map):
+    def __annotate(self, ax: Axes, map: Map) -> None:
         match (map.zoom):
             case 18 | 19:
                 if (len(map.network.highway) != 0):
@@ -102,7 +101,7 @@ class MapRenderer:
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])] #& map.administrative_levels["place"].isin(["state", "country"])]
                     self.__annotate_administrative_levels(ax, admin_levels)
 
-    def __search_tail(self, node, linestrings, checked, line):
+    def __search_tail(self, node: tuple[LineString, float], linestrings: list[tuple[LineString, float]], checked: list[bool], line: list[tuple[LineString, float]]) -> None:
         adjacent_lines_0 = []
         adjacent_lines_1 = []
         for linestring, check in zip(linestrings, checked):
@@ -110,14 +109,14 @@ class MapRenderer:
             if (node[0].coords[0] == linestring[0].coords[0] or node[0].coords[0] == linestring[0].coords[-1]): adjacent_lines_0.append(linestring)
             if (node[0].coords[-1] == linestring[0].coords[0] or node[0].coords[-1] == linestring[0].coords[-1]): adjacent_lines_1.append(linestring)
         if (len(adjacent_lines_0) != 1 and len(adjacent_lines_1) != 1): return
-        adjacent_line = None
+        adjacent_line = (LineString(None), 0.0)
         if (len(adjacent_lines_0) == 1): adjacent_line = adjacent_lines_0[0]
         if (len(adjacent_lines_1) == 1): adjacent_line = adjacent_lines_1[0]
         line.append(adjacent_line)
         checked[linestrings.index(adjacent_line)] = True
         self.__search_tail(adjacent_line, linestrings, checked, line)
 
-    def __annotate_streets(self, ax, streets, dist):
+    def __annotate_streets(self, ax: Axes, streets: GeoDataFrame, dist: float) -> None:
         streets_dict = dict()
         for _, edge in streets.iterrows():
             try: text = edge["name"]
@@ -166,16 +165,16 @@ class MapRenderer:
                                       color = "#000000", fontsize = "x-small")
                     txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
     
-    def __split_by_n(self, text, n):
-        text = text.split(" ")
+    def __split_by_n(self, text: str, n: int) -> str:
+        txt = text.split(" ")
         lines = ""
-        for i in range(0, len(text), n):
-            lines = lines + text[i]
-            if (i >= len(text) - 1): break
-            else: lines = lines + " " + text[i + 1] + "\n"
-        return lines
-    
-    def __annotate_buildings(self, ax, buildings):
+        for i in range(0, len(txt), n):
+            lines = lines + txt[i]
+            if (i >= len(txt) - 1): break
+            else: lines = lines + " " + txt[i + 1] + "\n"
+        return lines 
+
+    def __annotate_buildings(self, ax: Axes, buildings: GeoDataFrame) -> None:
         for _, build in buildings.iterrows():
             point = build["geometry"].centroid
             try:
@@ -188,7 +187,7 @@ class MapRenderer:
             txt = ax.annotate(lines, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", fontsize = "xx-small")
             txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
 
-    def __annotate_administrative_levels(self, ax, admin_levels):
+    def __annotate_administrative_levels(self, ax: Axes, admin_levels: GeoDataFrame) -> None:
         for _, level in admin_levels.iterrows():
             point = level["geometry"].centroid
             try: text = level["name"]
@@ -205,7 +204,7 @@ class MapRenderer:
             txt = ax.annotate(text, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", weight = "bold", fontsize = fontsize)
             txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])
 
-    def __annotate_amenities(self, ax, amenities):
+    def __annotate_amenities(self, ax: Axes, amenities: GeoDataFrame) -> None:
         for _, build in amenities.iterrows():
             point = build["geometry"].centroid
             try: text = build["name"]

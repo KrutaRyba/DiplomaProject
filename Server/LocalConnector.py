@@ -1,53 +1,52 @@
 from json import load
+from typing import Self
+from APIConnector import APIConnector
 from LinearFolderManager import LinearFolderManager
 from networkx import MultiDiGraph
 from osmnx import features, graph, _overpass
-from pandas import DataFrame
 from re import findall
 from subprocess import check_call
 from Utils import Definitions, Utils
 from geopandas import GeoDataFrame
 
-class LocalConnector:
+class LocalConnector(APIConnector):
 
-    def __init__(self):
-        self.__osm_file = None
+    def __init__(self) -> None:
+        self.__osm_file: str
         with open("ServerConfig.json") as file:
             self.__osm_file = load(file)["osm_file"]
-        if (self.__osm_file == None): raise RuntimeError("Specify an OSM file")
-        self.__f_manager = LinearFolderManager(Utils.find_file(Definitions.OSM_FOLDER))
-        self.__cached_bbox = None
+        if (self.__osm_file == None): raise RuntimeError("Configure ServerConfig.json")
+        self.__f_manager: LinearFolderManager = LinearFolderManager(Utils.find_file(Definitions.OSM_FOLDER))
+        self.__cached_bbox: str | None = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.__f_manager.cleanup()
 
-    def get_features(self, bbox, tags):
-        feature = DataFrame()
+    def get_features(self, bbox: tuple[float, float, float, float], tags: dict[str, bool | str | list[str]]) -> GeoDataFrame:
+        feature = GeoDataFrame()
         master_file = self.__f_manager.get_path("out.osm.pbf", 0)
         out_file = self.__f_manager.get_path("out.osm", 0)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
-            if (tags != None):
-                self.Osmium().tags_filter().overwrite().remove_tags() \
-                    .output(out_file).osm_file(master_file).filter_expression(self.__tags_to_args(tags)) \
-                    .execute()
-            else:
-                self.Osmium().cat().overwrite().output(out_file).osm_file(master_file).execute()
+            self.Osmium().tags_filter().overwrite().remove_tags() \
+                .output(out_file).osm_file(master_file).filter_expression(self.__tags_to_args(tags)) \
+                .execute()
             feature = features.features_from_xml(out_file)
         except Exception as e:
             print("  Not found")
             print(e)
         return feature
     
-    def get_network(self, bbox, network_type = "all", custom_filter = None):
+    def get_network(self, bbox: tuple[float, float, float, float], network_type: str | None, custom_filter: str | None) -> MultiDiGraph:
         network = MultiDiGraph()
+        type = "all" if (network_type == None) else network_type
         master_file = self.__f_manager.get_path("out.osm.pbf", 0)
         out_file = self.__f_manager.get_path("out.osm", 0)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
-            tags = self.__filter_to_args(_overpass._get_network_filter(network_type)) if (custom_filter == None) \
+            tags = self.__filter_to_args(_overpass._get_network_filter(type)) if (custom_filter == None) \
                 else self.__filter_to_args(custom_filter)
             self.__filter(tags, master_file, out_file)
             network = graph.graph_from_xml(out_file, retain_all = True)
@@ -56,12 +55,12 @@ class LocalConnector:
             print(e)
         return network
     
-    def __extract(self, bbox_str, out_file):
+    def __extract(self, bbox_str: str, out_file: str) -> None:
         if (self.__cached_bbox == None or self.__cached_bbox != bbox_str):
             self.Osmium().extract().bbox(bbox_str).overwrite().output(out_file).osm_file(self.__osm_file).execute()
             self.__cached_bbox = bbox_str
 
-    def __filter(self, tags, master_file, out_file):
+    def __filter(self, tags: list[str], master_file: str, out_file: str) -> None:
         counter = 0
         self.__f_manager.create_folder("osm_filter", 0)
         for tag in tags:
@@ -108,68 +107,68 @@ class LocalConnector:
         return elements
     
     class Osmium:
-        def __init__(self):
-            self.__command = None
-            self.__options = []
-            self.__osm_file = None
-            self.__filter = []
+        def __init__(self) -> None:
+            self.__command: str | None = None
+            self.__options: list[str] = []
+            self.__osm_file: str | None = None
+            self.__filter: list[str] = []
 
-        def cat(self):
+        def cat(self) -> Self:
             self.__command = "cat"
             return self
 
-        def extract(self):
+        def extract(self) -> Self:
             self.__command = "extract"
             return self
 
-        def merge(self):
+        def merge(self) -> Self:
             self.__command = "merge"
             return self
         
-        def tags_filter(self):
+        def tags_filter(self) -> Self:
             self.__command = "tags-filter"
             return self
         
-        def bbox(self, bbox):
+        def bbox(self, bbox: str) -> Self:
             self.__options.append("--bbox")
             self.__options.append(bbox)
             return self
 
-        def filter_expression(self, filter: list[str] | str):
+        def filter_expression(self, filter: list[str] | str) -> Self:
             if (type(filter) == str): self.__filter.append(filter)
             else: self.__filter += filter
             return self
 
-        def invert_match(self):
+        def invert_match(self) -> Self:
             self.__options.append("--invert-match")
             return self
 
-        def omit_referenced(self):
+        def omit_referenced(self) -> Self:
             self.__options.append("--omit-referenced")
             return self
 
-        def options(self, options: list[str]):
+        def options(self, options: list[str]) -> Self:
             self.__options += options
             return self
 
-        def output(self, output):
+        def output(self, output: str) -> Self:
             self.__options.append("--output")
             self.__options.append(output)
             return self
 
-        def overwrite(self):
+        def overwrite(self) -> Self:
             self.__options.append("--overwrite")
             return self
         
-        def osm_file(self, file):
+        def osm_file(self, file: str) -> Self:
             self.__osm_file = file
             return self
         
-        def remove_tags(self):
+        def remove_tags(self) -> Self:
             self.__options.append("--remove-tags")
             return self
 
-        def execute(self):
+        def execute(self) -> None:
             args = ["osmium", self.__command] \
                 + (self.__options if (len(self.__options) != 0) else []) \
                 + ([self.__osm_file] if (self.__osm_file != None) else []) \

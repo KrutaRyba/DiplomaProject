@@ -1,43 +1,45 @@
-from osmnx import utils_geo
+from DataFrames import Features, Network
+from geopandas import GeoDataFrame
 from Utils import Utils
+from osmnx import utils_geo
 
 class Map:
-    def __init__(self, center, zoom):
-        self.__center = center
-        self.__zoom = zoom
-        self.dist = None
-        self.bbox = None
-        self.bbox_data = None
-        self.features = None
-        self.network = None
-        self.administrative_levels = None
-        self.street_widths = None
-        self.railway_width = None
-        self.refresh()
+    def __init__(self, center: tuple[float, float], zoom: int) -> None:
+        self.__center: tuple[float, float] = center
+        self.__zoom: int = zoom
+        self.dist: float
+        self.bbox: tuple[float, float, float, float]
+        self.bbox_data: tuple[float, float, float, float]
+        self.features: Features
+        self.network: Network
+        self.administrative_levels: GeoDataFrame
+        self.street_widths: dict[str, float]
+        self.railway_width: int | float
+        self.__refresh()
 
-    def refresh(self):
+    def __refresh(self) -> None:
         self.dist = Utils.horizontal_distance(self.center[0], self.zoom)
         self.bbox = utils_geo.bbox_from_point(self.center, self.dist)
-        self.bbox_data = utils_geo.bbox_from_point(self.center, Utils.horizontal_distance(self.center[0], max(self.zoom - 2, 4)))
+        self.bbox_data = utils_geo.bbox_from_point(self.center, Utils.horizontal_distance(self.center[0], self.zoom))
 
     @property
-    def zoom(self):
+    def zoom(self) -> int:
         return self.__zoom
     @zoom.setter
-    def zoom(self, value):
+    def zoom(self, value: int) -> None:
         self.__zoom = value
-        self.refresh()
+        self.__refresh()
     @zoom.deleter
-    def zoom(self):
+    def zoom(self) -> None:
         del self.__zoom
 
     @property
-    def center(self):
+    def center(self) -> tuple[float, float]:
         return self.__center
     @center.setter
-    def center(self, value):
+    def center(self, value: tuple[float, float]) -> None:
         self.__center = value
-        self.refresh()
+        self.__refresh()
     @center.deleter
-    def center(self):
+    def center(self) -> None:
         del self.__center

@@ -6,28 +6,27 @@ from PIL import Image
 from requests import ConnectTimeout, get
 from Utils import Utils
 
+SERVER_IP = None
+SERVER_PORT = None
+is_emulated = None
+
+with open("ClientConfig.json") as file:
+    loaded = load(file)
+    SERVER_IP = loaded["server_ip"]
+    SERVER_PORT = loaded["server_port"]
+    is_emulated = loaded["is_emulated"]
+
+if (SERVER_IP == None or SERVER_PORT == None or is_emulated == None): raise RuntimeError("Configure ClientConfig.json")
+URL = f"http://{SERVER_IP}:{SERVER_PORT}/map/"
+
+center_point = [50.635678, 26.212011]
+zoom_level = 16
+
+EPD = EmulatedEPD() if (is_emulated) else PhysicalEPD()
+displayer = EPDDisplayer(EPD)
+
 try:
-    SERVER_IP = None
-    SERVER_PORT = None
-    is_emulated = None
-
-    with open("ClientConfig.json") as file:
-        loaded = load(file)
-        SERVER_IP = loaded["server_ip"]
-        SERVER_PORT = loaded["server_port"]
-        is_emulated = loaded["is_emulated"]
-
-    if (SERVER_IP == None or SERVER_PORT == None or is_emulated == None): raise RuntimeError("Specify server ip and/or server port")
-    URL = f"http://{SERVER_IP}:{SERVER_PORT}/map/"
-
-    center_point = [50.635678, 26.212011]
-    zoom_level = 16
-
-    EPD  = EmulatedEPD() if (is_emulated) else PhysicalEPD()
-    displayer = EPDDisplayer(EPD)
-    displayer.init_epd()
-
-    def handle_request(center_point, zoom_level):
+    def handle_request(center_point: list[float], zoom_level: int) -> None:
         response = None
         try:
             response = get(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}")
@@ -38,7 +37,8 @@ try:
         else: image = Image.open(BytesIO(response.content))
         image.save("Map.png")
         displayer.display()
-
+    
+    displayer.init_epd()
     handle_request(center_point, zoom_level)
 
     command = ""
@@ -68,7 +68,6 @@ try:
                 if (zoom_level > 6):
                     zoom_level = zoom_level - 1
                     handle_request(center_point, zoom_level)
-                    
                 else: print("Already at min zoom level")
             case "cp m":
                 try:

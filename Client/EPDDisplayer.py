@@ -1,18 +1,19 @@
+from EPDDisplay import EPDDisplay
 from PIL import Image
 
 class EPDDisplayer:
-    def __init__(self, EPD):
-        self.EPD = EPD
+    def __init__(self, EPD: EPDDisplay) -> None:
+        self.EPD: EPDDisplay = EPD
 
-    def init_epd(self):
+    def init_epd(self) -> None:
         print("----- Start EPD init -----")
         self.EPD.init()
         print("----- EPD init done -----")
 
-    def sleep(self):
+    def sleep(self) -> None:
         self.EPD.sleep()
 
-    def display(self):
+    def display(self) -> None:
         Himage = Image.open("Map.png")
         resized_img = Himage.resize((self.EPD.width, self.EPD.width))
         left = (self.EPD.width - self.EPD.width) / 2
@@ -25,5 +26,5 @@ class EPDDisplayer:
         self.EPD.display_image(img)
         img.close()
 
-    def exit(self):
+    def exit(self) -> None:
         self.EPD.exit()

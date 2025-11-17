@@ -3,5 +3,6 @@
 .venv/
 .vscode/
 __pycache__/
+cache/
 Map.bmp
 Map.png

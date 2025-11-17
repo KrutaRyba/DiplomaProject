@@ -1,4 +1,5 @@
 from flask import Flask, send_file
+from LocalConnector import LocalConnector
 from Map import Map
 from MapComposer import MapComposer
 from MapRenderer import MapRenderer
@@ -6,17 +7,18 @@ from Utils import Utils, Definitions
 
 app = Flask(__name__)
 
-show = False
-center_point = [50.635678, 26.212011]
-zoom_level = 17
+show = True
+center_point = (50.635678, 26.212011)
+zoom_level = 16
 
-composer = MapComposer()
+connector = LocalConnector()
+composer = MapComposer(connector)
 renderer = MapRenderer()
 map = Map(center_point, zoom_level)
 
 @app.route("/map/<float:lat>/<float:lon>/<int:zoom>", methods = ["GET"])
 def render_map(lat, lon, zoom):
-    map.center = [lat, lon]
+    map.center = (lat, lon)
     map.zoom = zoom
     composer.compose(map)
     renderer.render(map, show)

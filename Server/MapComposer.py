@@ -1,27 +1,15 @@
+from geopandas import GeoDataFrame
 from APIConnector import APIConnector
-from LocalConnector import LocalConnector
-from networkx import MultiDiGraph
-from pandas import DataFrame
+from DataFrames import Features, Network
+from Map import Map
 from Utils import Utils
-
-class Features:
-    def __init__(self):
-        self.buildings = None
-        self.grass = None
-        self.sand = None
-        self.water = None
-        self.amenities = None
-
-class Network:
-    def __init__(self):
-        self.highway = None
-        self.railway = None
+from networkx import MultiDiGraph
 
 class MapComposer:
-    def __init__(self):
-        self.API = LocalConnector()
+    def __init__(self, connector: APIConnector) -> None:
+        self.API: APIConnector = connector
 
-    def compose(self, map):
+    def compose(self, map: Map) -> None:
         if (map.zoom == 19 or map.zoom == 18):
             map.features, map.network, map.administrative_levels = self.__zoom_level_close(map.bbox_data, map.dist)
             map.street_widths = {"motorway": 8,
@@ -58,7 +46,7 @@ class MapComposer:
             map.street_widths = {"motorway": 1}
             map.railway_width = 0
     
-    def __zoom_level_close(self, bbox, _):
+    def __zoom_level_close(self, bbox: tuple[float, float, float, float], _ : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
@@ -83,17 +71,16 @@ class MapComposer:
         print("> Administrative levels")
         admin_levels = self.API.get_features(bbox, {"place": ["state", "country"]})
         print("----- Download done -----")
-        #amen = self.API.get_features(bbox, {"amenity": True})
         return (features, network, admin_levels)
     
-    def __zoom_level_medium_close(self, bbox, _):
+    def __zoom_level_medium_close(self, bbox: tuple[float, float, float, float], _ : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
         features.buildings = self.API.get_features(bbox, {"building": True})
         print("> Amenities")
-        features.amenities = DataFrame()
+        features.amenities = GeoDataFrame()
         print("  Skipped")
         print("> Grass")
         features.grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "orchard", "plant_nursery", "grass", "recreation_ground"],
@@ -112,15 +99,15 @@ class MapComposer:
         print("----- Download done -----")
         return (features, network, admin_levels)
     
-    def __zoom_level_medium(self, bbox, dist):
+    def __zoom_level_medium(self, bbox: tuple[float, float, float, float], dist : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
-        features.buildings = DataFrame()
+        features.buildings = GeoDataFrame()
         print("  Skipped")
         print("> Amenities")
-        features.amenities = DataFrame()
+        features.amenities = GeoDataFrame()
         print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
@@ -128,7 +115,7 @@ class MapComposer:
                                              "natural": ["grassland", "heath", "scrub", "wood"]})
         features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
-        features.sand = DataFrame()
+        features.sand = GeoDataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
@@ -142,22 +129,22 @@ class MapComposer:
         print("----- Download done -----")
         return (features, network, admin_levels)
     
-    def __zoom_level_medium_far(self, bbox, dist):
+    def __zoom_level_medium_far(self, bbox: tuple[float, float, float, float], dist : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
-        features.buildings = DataFrame()
+        features.buildings = GeoDataFrame()
         print("  Skipped")
         print("> Amenities")
-        features.amenities = DataFrame()
+        features.amenities = GeoDataFrame()
         print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"landuse": ["allotments", "farmland", "forest", "meadow", "grass"],
                                              "natural": ["grassland", "heath", "scrub", "wood"]})
         features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
-        features.sand = DataFrame()
+        features.sand = GeoDataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["bay", "reef", "strait", "water"]})
@@ -171,21 +158,21 @@ class MapComposer:
         print("----- Download done -----")
         return (features, network, admin_levels)
     
-    def __zoom_level_far(self, bbox, dist):
+    def __zoom_level_far(self, bbox: tuple[float, float, float, float], dist : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
-        features.buildings = DataFrame()
+        features.buildings = GeoDataFrame()
         print("  Skipped")
         print("> Amenities")
-        features.amenities = DataFrame()
+        features.amenities = GeoDataFrame()
         print("  Skipped")
         print("> Grass")
         grass = self.API.get_features(bbox, {"natural": ["grassland"]})
         features.grass = Utils.filter_features_by_area(grass, dist)
         print("> Sand")
-        features.sand = DataFrame()
+        features.sand = GeoDataFrame()
         print("  Skipped")
         print("> Water")
         water = self.API.get_features(bbox, {"natural": ["water"]})
@@ -199,24 +186,24 @@ class MapComposer:
         print("----- Download done -----")
         return (features, network, admin_levels)
     
-    def __zoom_level_super_far(self, bbox, dist):
+    def __zoom_level_super_far(self, bbox: tuple[float, float, float, float], _ : float) -> tuple[Features, Network, GeoDataFrame]:
         features = Features()
         network = Network()
         print("----- Start download -----")
         print("> Buildings")
-        features.buildings = DataFrame()
+        features.buildings = GeoDataFrame()
         print("  Skipped")
         print("> Amenities")
-        features.amenities = DataFrame()
+        features.amenities = GeoDataFrame()
         print("  Skipped")
         print("> Grass")
-        features.grass = DataFrame()
+        features.grass = GeoDataFrame()
         print("  Skipped")
         print("> Sand")
-        features.sand = DataFrame()
+        features.sand = GeoDataFrame()
         print("  Skipped")
         print("> Water")
-        features.water = DataFrame()
+        features.water = GeoDataFrame()
         print("  Skipped")
         print("> Highway")
         network.highway = MultiDiGraph()
