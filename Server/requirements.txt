@@ -2,4 +2,3 @@ flask
 matplotlib
 numpy
 osmnx
-pandas
