@@ -1,20 +1,22 @@
-from abc import ABC, abstractmethod
 from PIL.Image import Image, open
 
-class EPDDisplay(ABC):
-    @abstractmethod
+class EPDDisplay():
     def init(self) -> None:
-        self.width: int
-        self.height: int
-    @abstractmethod
+        print("<<EPD init>>")
+        self.width: int = 800
+        self.height: int = 480
+
     def sleep(self) -> None:
-        pass
-    @abstractmethod
+        print("<<Emulated EPD sleep>>")
+
     def display_image(self) -> None:
-        pass
-    @abstractmethod
+        print("<<EPD display_image>>")
+        img = self.__get_image()
+        img.show()
+        img.close()
+    
     def exit(self) -> None:
-        pass
+        print("<<EPD exit>>")
 
     def __get_image(self) -> Image:
         Himage = open("Map.png")
@@ -50,22 +52,3 @@ class PhysicalEPD(EPDDisplay):
     def exit(self) -> None:
         from waveshare_epd import epd7in3f
         epd7in3f.epdconfig.module_exit(cleanup=True)
-
-
-class EmulatedEPD(EPDDisplay):
-    def init(self) -> None:
-        print("<<Emulated EPD init>>")
-        self.width: int = 800
-        self.height: int = 480
-    
-    def sleep(self) -> None:
-        print("<<Emulated EPD sleep>>")
-
-    def display_image(self) -> None:
-        print("<<Emulated EPD display_image>>")
-        img = super().__get_image()
-        img.show()
-        img.close()
-
-    def exit(self) -> None:
-        print("<<Emulated EPD exit>>")

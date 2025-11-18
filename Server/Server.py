@@ -9,16 +9,16 @@ from json import load
 
 app = Flask(__name__)
 
-is_local = None
+from_file = None
 show = False
 
 with open("ServerConfig.json") as file:
     loaded = load(file)
-    is_local = loaded["is_local"]
+    from_file = loaded["from_file"]
 
-if (is_local == None): raise RuntimeError("Configure ServerConfig.json")
+if (from_file == None): raise RuntimeError("Configure ServerConfig.json")
 
-connector = LocalConnector() if (is_local) else OSMNXConnector()
+connector = LocalConnector() if (from_file) else OSMNXConnector()
 composer = MapComposer(connector)
 renderer = MapRenderer()
 

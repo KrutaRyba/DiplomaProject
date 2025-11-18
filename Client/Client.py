@@ -1,4 +1,4 @@
-from EPDDisplay import PhysicalEPD, EmulatedEPD
+from EPDDisplay import PhysicalEPD, EPDDisplay
 from io import BytesIO
 from json import load
 from PIL import Image
@@ -20,7 +20,7 @@ URL = f"http://{SERVER_IP}:{SERVER_PORT}/map/"
 
 center_point = [50.635678, 26.212011]
 zoom_level = 16
-EPD = EmulatedEPD() if (is_emulated) else PhysicalEPD()
+EPD = EPDDisplay() if (is_emulated) else PhysicalEPD()
 
 try:
     def handle_request(center_point: list[float], zoom_level: int) -> None:
