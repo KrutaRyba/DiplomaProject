@@ -1,4 +1,5 @@
-from EPDDisplay import PhysicalEPD, EPDDisplay
+from EPDDisplay import PhysicalEPD, EmulatedEPD
+from EPDDisplayer import EPDDisplayer
 from io import BytesIO
 from json import load
 from PIL import Image
@@ -20,22 +21,23 @@ URL = f"http://{SERVER_IP}:{SERVER_PORT}/map/"
 
 center_point = [50.635678, 26.212011]
 zoom_level = 16
-EPD = EPDDisplay() if (is_emulated) else PhysicalEPD()
+EPD = EmulatedEPD() if (is_emulated) else PhysicalEPD()
+displayer = EPDDisplayer(EPD)
 
 try:
     def handle_request(center_point: list[float], zoom_level: int) -> None:
         response = None
         try:
             response = get(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}")
-        except ConnectTimeout as e:
+        except (ConnectTimeout | ConnectionError) as e:
             print(e)
         image = None
         if (response == None or response.status_code == 500): image = Image.open("Error.png")
         else: image = Image.open(BytesIO(response.content))
         image.save("Map.png")
-        EPD.display_image()
+        displayer.display()
     
-    EPD.init()
+    displayer.init_epd()
     handle_request(center_point, zoom_level)
 
     command = ""
@@ -45,7 +47,7 @@ try:
         match (command):
             case "exit":
                 print("----- Exit -----")
-                EPD.sleep()
+                displayer.sleep()
             case "zoom m":
                 try:
                     zoom = int(input("Give zoom level [zoom]: "))
@@ -100,4 +102,4 @@ try:
             case _:
                 print("Incorrect command. Print 'help' for help")
 except KeyboardInterrupt:
-    EPD.exit()
+    displayer.exit()
