@@ -54,52 +54,52 @@ class MapRenderer:
                 if (len(map.network.highway) != 0):
                    streets = to_undirected(map.network.highway)
                    streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
-                   self.__annotate_streets(ax, streets, map.dist)
+                   self.__annotate_streets(ax, streets, map.bbox, map.dist)
                 if (not map.features.buildings.empty): self.__annotate_buildings(ax, map.features.buildings)
                 if (not map.features.amenities.empty): self.__annotate_amenities(ax, map.features.amenities)
             case 16 | 17:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
-                    self.__annotate_streets(ax, streets, map.dist)
+                    self.__annotate_streets(ax, streets, map.bbox, map.dist)
                 if (not map.features.buildings.empty):
                     buildings = Utils.filter_features_by_area(map.features.buildings, map.dist * 2)
-                    self.__annotate_buildings(ax, buildings)
+                    if (not buildings.empty): self.__annotate_buildings(ax, buildings)
             case 14 | 15:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary", "secondary", "tertiary"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.bbox, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
-                    self.__annotate_administrative_levels(ax, admin_levels)
+                    if (not admin_levels.empty): self.__annotate_administrative_levels(ax, admin_levels)
             case 12 | 13:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway", "trunk", "primary"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.bbox, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
-                    self.__annotate_administrative_levels(ax, admin_levels)
+                    if (not admin_levels.empty): self.__annotate_administrative_levels(ax, admin_levels)
             case 10 | 11:
                 if (len(map.network.highway) != 0):
                     streets = to_undirected(map.network.highway)
                     streets = graph_to_gdfs(streets, nodes = False, fill_edge_geometry = True).fillna('')
                     streets = streets[streets["highway"].isin(["motorway"])]
-                    if (not streets.empty): self.__annotate_streets(ax, streets, map.dist)
+                    if (not streets.empty): self.__annotate_streets(ax, streets, map.bbox, map.dist)
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
-                    self.__annotate_administrative_levels(ax, admin_levels)
+                    if (not admin_levels.empty): self.__annotate_administrative_levels(ax, admin_levels)
             case 8 | 9:
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])]
-                    self.__annotate_administrative_levels(ax, admin_levels)
+                    if (not admin_levels.empty): self.__annotate_administrative_levels(ax, admin_levels)
             case 6 | 7:
                 if (not map.administrative_levels.empty):
                     admin_levels = map.administrative_levels[map.administrative_levels.geometry.type.isin(["Point"])] #& map.administrative_levels["place"].isin(["state", "country"])]
-                    self.__annotate_administrative_levels(ax, admin_levels)
+                    if (not admin_levels.empty): self.__annotate_administrative_levels(ax, admin_levels)
 
     def __search_tail(self, node: tuple[LineString, float], linestrings: list[tuple[LineString, float]], checked: list[bool], line: list[tuple[LineString, float]]) -> None:
         adjacent_lines_0 = []
@@ -116,7 +116,8 @@ class MapRenderer:
         checked[linestrings.index(adjacent_line)] = True
         self.__search_tail(adjacent_line, linestrings, checked, line)
 
-    def __annotate_streets(self, ax: Axes, streets: GeoDataFrame, dist: float) -> None:
+    def __annotate_streets(self, ax: Axes, streets: GeoDataFrame, bbox: tuple[float, float, float, float], dist: float) -> None:
+        streets = streets.cx[bbox[0]:bbox[2], bbox[1]:bbox[3]]
         streets_dict = dict()
         for _, edge in streets.iterrows():
             try: text = edge["name"]

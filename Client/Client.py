@@ -1,5 +1,4 @@
 from EPDDisplay import PhysicalEPD, EmulatedEPD
-from EPDDisplayer import EPDDisplayer
 from io import BytesIO
 from json import load
 from PIL import Image
@@ -21,9 +20,7 @@ URL = f"http://{SERVER_IP}:{SERVER_PORT}/map/"
 
 center_point = [50.635678, 26.212011]
 zoom_level = 16
-
 EPD = EmulatedEPD() if (is_emulated) else PhysicalEPD()
-displayer = EPDDisplayer(EPD)
 
 try:
     def handle_request(center_point: list[float], zoom_level: int) -> None:
@@ -36,9 +33,9 @@ try:
         if (response == None or response.status_code == 500): image = Image.open("Error.png")
         else: image = Image.open(BytesIO(response.content))
         image.save("Map.png")
-        displayer.display()
+        EPD.display_image()
     
-    displayer.init_epd()
+    EPD.init()
     handle_request(center_point, zoom_level)
 
     command = ""
@@ -48,7 +45,7 @@ try:
         match (command):
             case "exit":
                 print("----- Exit -----")
-                displayer.sleep()
+                EPD.sleep()
             case "zoom m":
                 try:
                     zoom = int(input("Give zoom level [zoom]: "))
@@ -58,7 +55,7 @@ try:
                     zoom_level = zoom
                     handle_request(center_point, zoom_level)
                 except (ValueError):
-                    print("Input: numbers from 6 to 19 (included)")
+                    print("Input: number from 6 to 19 (included)")
             case "h":
                 if (zoom_level < 19):
                     zoom_level = zoom_level + 1
@@ -75,7 +72,7 @@ try:
                     center_point = [float(cp[0]), float(cp[1])]
                     handle_request(center_point, zoom_level)
                 except (ValueError):
-                    print("Input: numbers from X to Y (included)")
+                    print("Input: number/number")
             case "w":
                 center_point = Utils.add_meters_to_point_lon(center_point, Utils.horizontal_distance(center_point[0], zoom_level))
                 handle_request(center_point, zoom_level)
@@ -103,4 +100,4 @@ try:
             case _:
                 print("Incorrect command. Print 'help' for help")
 except KeyboardInterrupt:
-    displayer.exit()
+    EPD.exit()

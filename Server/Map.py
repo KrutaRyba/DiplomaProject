@@ -20,7 +20,7 @@ class Map:
     def __refresh(self) -> None:
         self.dist = Utils.horizontal_distance(self.center[0], self.zoom)
         self.bbox = utils_geo.bbox_from_point(self.center, self.dist)
-        self.bbox_data = utils_geo.bbox_from_point(self.center, Utils.horizontal_distance(self.center[0], self.zoom))
+        self.bbox_data = utils_geo.bbox_from_point(self.center, Utils.horizontal_distance(self.center[0], self.zoom - 2))
 
     @property
     def zoom(self) -> int:
