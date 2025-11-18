@@ -20,11 +20,9 @@ class EPDDisplay(ABC):
 class PhysicalEPD(EPDDisplay):
     def init(self) -> None:
         from waveshare_epd import epd7in3f
-        print("----- Start EPD init -----")
         self.EPD = epd7in3f.EPD()
         self.EPD.init()
         self.EPD.Clear()
-        print("----- EPD init done -----")
         self.width: int = self.EPD.width
         self.height: int = self.EPD.height
 
