@@ -3,7 +3,8 @@ from EPDDisplayer import EPDDisplayer
 from io import BytesIO
 from json import load
 from PIL import Image
-from requests import ConnectTimeout, get
+from requests import get
+from requests.exceptions import ConnectionError, ConnectTimeout
 from Utils import Utils
 
 SERVER_IP = None
@@ -29,8 +30,10 @@ try:
         response = None
         try:
             response = get(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}")
-        except (ConnectTimeout | ConnectionError) as e:
-            print(e)
+        except (ConnectTimeout, ConnectionError):
+            print("Connection refused or timeout. Make sure that ClientConfig.conf is properly configured")
+            displayer.sleep()
+            exit()
         image = None
         if (response == None or response.status_code == 500): image = Image.open("Error.png")
         else: image = Image.open(BytesIO(response.content))

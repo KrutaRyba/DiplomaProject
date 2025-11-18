@@ -117,7 +117,7 @@ sudo apt-get update
 sudo apt install python3-gpiozero
 ```
 
-### Installing the E-Paper Library
+### Installing the E-Paper Library (optional since it is already included in the repository)
 
 1. Download the demo
 
