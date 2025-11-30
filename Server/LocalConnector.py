@@ -8,7 +8,8 @@ from re import findall
 from subprocess import check_call
 from Utils import Definitions, Utils
 from geopandas import GeoDataFrame
-
+from random import choices
+from string import ascii_letters, digits
 class LocalConnector(APIConnector):
 
     def __init__(self) -> None:
@@ -16,16 +17,15 @@ class LocalConnector(APIConnector):
         with open("ServerConfig.json") as file:
             self.__osm_file = load(file)["osm_file"]
         if (self.__osm_file == None): raise RuntimeError("Configure ServerConfig.json")
+        folder = ''.join(choices(ascii_letters + digits, k = 16))
         self.__f_manager: LinearFolderManager = LinearFolderManager(Utils.find_file(Definitions.OSM_FOLDER))
+        self.__f_manager.create_folder(folder, 0)
         self.__cached_bbox: str | None = None
-
-    def __del__(self) -> None:
-        self.__f_manager.cleanup()
 
     def get_features(self, bbox: tuple[float, float, float, float], tags: dict[str, bool | str | list[str]]) -> GeoDataFrame:
         feature = GeoDataFrame()
-        master_file = self.__f_manager.get_path("out.osm.pbf", 0)
-        out_file = self.__f_manager.get_path("out.osm", 0)
+        master_file = self.__f_manager.get_path("out.osm.pbf", 1)
+        out_file = self.__f_manager.get_path("out.osm", 1)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
@@ -41,8 +41,8 @@ class LocalConnector(APIConnector):
     def get_network(self, bbox: tuple[float, float, float, float], network_type: str | None, custom_filter: str | None) -> MultiDiGraph:
         network = MultiDiGraph()
         type = "all" if (network_type == None) else network_type
-        master_file = self.__f_manager.get_path("out.osm.pbf", 0)
-        out_file = self.__f_manager.get_path("out.osm", 0)
+        master_file = self.__f_manager.get_path("out.osm.pbf", 1)
+        out_file = self.__f_manager.get_path("out.osm", 1)
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
@@ -62,9 +62,9 @@ class LocalConnector(APIConnector):
 
     def __filter(self, tags: list[str], master_file: str, out_file: str) -> None:
         counter = 0
-        self.__f_manager.create_folder("osm_filter", 0)
+        self.__f_manager.create_folder("osm_filter", 1)
         for tag in tags:
-            tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 1)
+            tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
             counter += 1
             if ("=" in tag):
                 # Key-Value
@@ -72,13 +72,13 @@ class LocalConnector(APIConnector):
                     sub_tags = tag.split("!=")
                     self.Osmium().tags_filter().invert_match().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
                         .filter_expression("w/" + sub_tags[0]).execute()
-                    tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 1)
+                    tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
                     self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
                         .filter_expression("w/" + tag).execute()
                     counter += 1
-                    tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 1)
+                    tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
                     self.Osmium().merge().overwrite().output(tmp_file) \
-                        .options([self.__f_manager.get_path(f"{counter - 2}.osm.pbf", 1), self.__f_manager.get_path(f"{counter - 1}.osm.pbf", 1)]) \
+                        .options([self.__f_manager.get_path(f"{counter - 2}.osm.pbf", 2), self.__f_manager.get_path(f"{counter - 1}.osm.pbf", 2)]) \
                         .execute()
                     counter += 1
                 else:
