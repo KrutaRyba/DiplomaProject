@@ -1,9 +1,6 @@
 #!/bin/sh
-
-# Fail if anything fails
 set -e
 
-# Bold-formatted echo
 becho() {
   local normal=$(tput sgr0)
   local bold=$(tput bold)
@@ -12,16 +9,16 @@ becho() {
 }
 
 becho "Installing osmium-tool"
-case "$OSTYPE" in
-  darwin*)
+case "${OSTYPE}" in
+  "darwin"* )
   brew update
   brew install osmium-tool
   ;; 
-  linux*)
+  "linux"* )
   sudo apt-get update
   sudo apt-get install osmium-tool
   ;;
-  *)
+  * )
   becho "${OSTYPE}: unsupported"
   exit 1
   ;;
@@ -39,7 +36,13 @@ fi
 
 server_config_file="ServerConfig.json"
 becho "Modifying ${server_config_file}"
-sed -i '' -r -e "s#\"osm_file\"[^,]*#\"osm_file\":\"${osm_folder}/${osm_file}\"#g" "${server_config_file}"
+sed_in_place='-i'
+case "${OSTYPE}" in
+  "darwin"* )
+  sed_in_place='-i ""'
+  ;;
+esac
+sed "${sed_in_place}" -r -e "s#\"osm_file\"[^,]*#\"osm_file\":\"${osm_folder}/${osm_file}\"#g" "${server_config_file}"
 
 python3 -m venv .venv
 
@@ -48,5 +51,3 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 
 pip install -r requirements.txt
-
-deactivate
