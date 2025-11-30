@@ -17,15 +17,14 @@ with open("ServerConfig.json") as file:
 
 if (from_file == None): raise RuntimeError("Configure ServerConfig.json")
 
-connector = LocalConnector() if (from_file) else OSMNXConnector()
-composer = MapComposer(connector)
-renderer = MapRenderer()
-
 @app.route("/map/<float:lat>/<float:lon>/<int:zoom>", methods = ["GET"])
 def render_map(lat, lon, zoom):
     if (zoom > 19): zoom = 19
     if (zoom < 6): zoom = 6
     map = Map((lat, lon), zoom)
+    connector = LocalConnector() if (from_file) else OSMNXConnector()
+    composer = MapComposer(connector)
+    renderer = MapRenderer()
     composer.compose(map)
     bytes = renderer.render(map, show)
     return send_file(bytes, mimetype = "image/png")
