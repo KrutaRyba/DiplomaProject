@@ -87,7 +87,7 @@ class LocalConnector(APIConnector):
             else:
                 # Key
                 command = self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).filter_expression("w/" + tag).osm_file(master_file)
-                if ("!=" in tag): command.invert_match()
+                if ("!" in tag): command.invert_match()
                 command.execute()
             master_file = tmp_file
         self.Osmium().cat().overwrite().output(out_file).osm_file(master_file).execute()
@@ -98,7 +98,7 @@ class LocalConnector(APIConnector):
             string = f"{key}="
             if (type(value) is list): string += ",".join([x for x in value])
             elif (type(value) is str): string += value
-            else: string = key
+            else: string = key if (value) else "!" + key
             elements.append(string)
         return elements
 
