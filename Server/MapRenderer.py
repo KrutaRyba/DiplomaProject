@@ -7,14 +7,15 @@ from osmnx.convert import to_undirected
 from shapely import LineString, line_merge, MultiLineString
 from Map import Map
 from Utils import Utils
-from Utils import Utils, Definitions
+from Utils import Utils
 from DataFrames import Street
+from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use("agg")
 
 class MapRenderer:
-    def render(self, map: Map, show: bool) -> None:
+    def render(self, map: Map, show: bool) -> BytesIO:
         ax = plt.gca()
         # Features
         if (not map.features.grass.empty):
@@ -44,9 +45,13 @@ class MapRenderer:
         fig.set_size_inches(8, 8)
         tightbox = fig.get_tightbbox(fig.canvas.get_renderer())
         self.__annotate(ax, map)
-        plt.savefig(Utils.find_file("Map.png", Definitions.MAP_FOLDER), bbox_inches = tightbox, pad_inches = 0, dpi = 150)
+        bytes = BytesIO()
+        plt.savefig(bytes, bbox_inches = tightbox, pad_inches = 0, dpi = 150)
+        bytes.flush()
+        bytes.seek(0)
         if (show): plt.show()
         plt.close(fig)
+        return bytes
 
     def __annotate(self, ax: Axes, map: Map) -> None:
         match (map.zoom):

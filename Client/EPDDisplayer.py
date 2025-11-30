@@ -13,15 +13,15 @@ class EPDDisplayer:
     def sleep(self) -> None:
         self.EPD.sleep()
 
-    def display(self) -> None:
-        Himage = Image.open("Map.png")
-        resized_img = Himage.resize((self.EPD.width, self.EPD.width))
+    def display(self, image: Image.Image) -> None:
+        image = image.resize((self.EPD.width, self.EPD.width))
         left = (self.EPD.width - self.EPD.width) / 2
         top = (self.EPD.width - self.EPD.height) / 2
         right = (self.EPD.width + self.EPD.width) / 2
         bottom = (self.EPD.width + self.EPD.height) / 2
-        resized_img = resized_img.crop((left, top, right, bottom))
-        resized_img.save("Map.bmp")
+        image = image.crop((left, top, right, bottom))
+        image.save("Map.bmp")
+        image.close()
         img = Image.open("Map.bmp")
         self.EPD.display_image(img)
         img.close()

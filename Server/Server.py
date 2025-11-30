@@ -4,7 +4,6 @@ from OSMNXConnector import OSMNXConnector
 from Map import Map
 from MapComposer import MapComposer
 from MapRenderer import MapRenderer
-from Utils import Utils, Definitions
 from json import load
 
 app = Flask(__name__)
@@ -28,8 +27,8 @@ def render_map(lat, lon, zoom):
     if (zoom < 6): zoom = 6
     map = Map((lat, lon), zoom)
     composer.compose(map)
-    renderer.render(map, show)
-    return send_file(Utils.find_file("Map.png", Definitions.MAP_FOLDER), mimetype = "image/png")
+    bytes = renderer.render(map, show)
+    return send_file(bytes, mimetype = "image/png")
 
 @app.route("/map", methods = ["GET"])
 def server_info():

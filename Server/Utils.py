@@ -27,4 +27,3 @@ class Utils:
     
 class Definitions:
     OSM_FOLDER: str = ".osm_tmp"
-    MAP_FOLDER: str = "img"
