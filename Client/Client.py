@@ -30,9 +30,9 @@ if (SERVER_IP == None or SERVER_PORT == None or is_emulated == None): raise Runt
 URL = f"http://{SERVER_IP}:{SERVER_PORT}/map"
 
 try:
-    with urlopen(URL) as response:
+    with urlopen(URL, timeout = 3) as response:
         resp = response.read()
-except (HTTPError, URLError):
+except (HTTPError, URLError, TimeoutError):
     print("Connection refused or timeout. Make sure that ClientConfig.json is properly configured")
     exit()
 
@@ -45,9 +45,9 @@ try:
     def handle_request(center_point: list[float], zoom_level: int) -> None:
         response = None
         try:
-            with urlopen(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}") as r:
+            with urlopen(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}", timeout = 60) as r:
                 response = r.read()
-        except (HTTPError, URLError):
+        except (HTTPError, URLError, TimeoutError):
             print("Connection refused or timeout. Make sure that ClientConfig.json is properly configured")
             displayer.sleep()
             exit()
