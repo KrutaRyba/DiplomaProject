@@ -4,6 +4,8 @@ This instruction will allow you to configure your environment and install all th
 
 Neither [Server Setup](#server-setup) nor [Client Setup](#client-setup) includes Python and Python Virtual Environment installation step.
 
+Installaion was tested on the Ubuntu 24.04.1 LTS and macOS Tahoe 26.0
+
 ## Server Setup
 
 Assumptions:
@@ -127,4 +129,5 @@ unzip E-Paper_code.zip -d e-Paper
 
 ```
 cp <path_to_epaper_folder>/RaspberryPi_JetsonNano/python/lib/waveshare_epd <path_to_client_folder>
+
 ```
