@@ -10,32 +10,6 @@ Assumptions:
 - Server has python3 installed
 - Server has python3-virtualenv installed
 
-### Configuring Environment
-
-1. Install the Osmium tool
-
-**Linux**
-```
-sudo apt-get install osmium-tool
-```
-
-**macOS**
-```
-sudo brew osmium-tool
-```
-
-2. Take a note of the IP address
-
-```
-ifconfig
-```
-
-3. Download the OSM data
-
-```
-wget https://download.geofabrik.de/europe/ukraine-latest.osm.pbf
-```
-
 ### Installing the Server
 
 1. Download the Server
@@ -46,30 +20,25 @@ git clone https://github.com/KrutaRyba/DiplomaProject.git
 cd DiplomaProject/Server
 ```
 
-2. Create venv
+2. Run the setup script
 
 ```
-python3 -m venv .venv
+chmod +x Setup.sh
+./Setup.sh
 ```
 
-3. Activate venv
+3. Reboot
+
+```
+sudo reboot
+```
+
+4. Activate venv
 ```
 source .venv/bin/activate
 ```
 
-4. Install the dependencies
-
-```
-pip install -r requirements.txt
-```
-
-5. Edit ServerConfig.json
-
-```
-"osm_file":"[path_to_the_osm_file]"
-```
-
-6. Start the Server
+5. Start the Server
 
 ```
 python3 Server.py
@@ -117,6 +86,28 @@ sudo apt-get update
 sudo apt install python3-gpiozero
 ```
 
+### Installing the Client
+
+1. Download the Client (skip if already done so in the [Server Setup](#server-setup))
+
+**GitHub**
+```
+git clone https://github.com/KrutaRyba/DiplomaProject.git
+cd DiplomaProject/Client
+```
+
+2. Edit ClientConfig.json
+
+```
+"server_ip":"[server_ip]",
+```
+
+3. Start the Client
+
+```
+python3 Client.py
+```
+
 ### Installing the E-Paper Library (optional since it is already included in the repository)
 
 1. Download the demo
@@ -132,47 +123,8 @@ wget https://files.waveshare.com/upload/7/71/E-Paper_code.zip
 unzip E-Paper_code.zip -d e-Paper
 ```
 
-### Installing the Client
-
-1. Download the Client (skip if already done so in the [Server Setup](#server-setup))
-
-**GitHub**
-```
-git clone https://github.com/KrutaRyba/DiplomaProject.git
-cd DiplomaProject/Client
-```
-
-2. Create venv
+2. Add e-Paper library to the Client files
 
 ```
-python3 -m venv .venv --system-site-packages
-```
-
-3. Activate venv
-```
-source .venv/bin/activate
-```
-
-4. Install the dependencies
-
-```
-pip install -r requirements.txt
-```
-
-5. Edit ClientConfig.json
-
-```
-"server_ip":"[server_ip]",
-```
-
-6. Add E-Paper Library to the Client files
-
-```
-cp \<path_to_epaper_folder\>/RaspberryPi_JetsonNano/python/lib/ \<path_to_client_folder\>
-```
-
-7. Start the Client
-
-```
-python3 Client.py
+cp <path_to_epaper_folder>/RaspberryPi_JetsonNano/python/lib/waveshare_epd <path_to_client_folder>
 ```
