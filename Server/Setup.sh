@@ -1,6 +1,9 @@
-#!/bin/sh
+#!/bin/bash
+
+# Fail if anything fails
 set -e
 
+# Bold-formatted echo
 becho() {
   local normal=$(tput sgr0)
   local bold=$(tput bold)
