@@ -29,7 +29,8 @@ class LocalConnector(APIConnector):
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
-            self.__or_filter(self.__tags_to_args(tags), master_file, out_file)
+            # Change to the __or_filter if there is False in tags values
+            self.__simple_filter(self.__tags_to_args(tags), master_file, out_file)
             feature = features.features_from_xml(out_file)
         except Exception as e:
             print("  Not found")
@@ -58,6 +59,11 @@ class LocalConnector(APIConnector):
             self.Osmium().extract().bbox(bbox_str).overwrite().output(out_file).osm_file(self.__osm_file).execute()
             self.__cached_bbox = bbox_str
 
+    def __simple_filter(self, tags: list[str], master_file: str, out_file: str) -> None:
+        self.Osmium().tags_filter().overwrite().remove_tags() \
+                .output(out_file).osm_file(master_file).filter_expression(tags) \
+                .execute()
+        
     def __or_filter(self, tags: list[str], master_file: str, out_file: str) -> None:
         self.__f_manager.create_folder("osm_filter", 1)
         normal = [x for x in tags if ("!" not in x)]
