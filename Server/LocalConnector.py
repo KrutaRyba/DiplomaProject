@@ -29,9 +29,8 @@ class LocalConnector(APIConnector):
         bbox_str = ",".join([("{0:0.6f}").format(x) for x in bbox])
         try:
             self.__extract(bbox_str, master_file)
-            self.Osmium().tags_filter().overwrite().remove_tags() \
-                .output(out_file).osm_file(master_file).filter_expression(self.__tags_to_args(tags)) \
-                .execute()
+            # Change to the __or_filter if there is False in tags values
+            self.__simple_filter(self.__tags_to_args(tags), master_file, out_file)
             feature = features.features_from_xml(out_file)
         except Exception as e:
             print("  Not found")
@@ -48,7 +47,7 @@ class LocalConnector(APIConnector):
             self.__extract(bbox_str, master_file)
             tags = self.__filter_to_args(_overpass._get_network_filter(type)) if (custom_filter == None) \
                 else self.__filter_to_args(custom_filter)
-            self.__filter(tags, master_file, out_file)
+            self.__and_filter(tags, master_file, out_file)
             network = graph.graph_from_xml(out_file, retain_all = True)
         except Exception as e:
             print("  Not found")
@@ -60,7 +59,33 @@ class LocalConnector(APIConnector):
             self.Osmium().extract().bbox(bbox_str).overwrite().output(out_file).osm_file(self.__osm_file).execute()
             self.__cached_bbox = bbox_str
 
-    def __filter(self, tags: list[str], master_file: str, out_file: str) -> None:
+    def __simple_filter(self, tags: list[str], master_file: str, out_file: str) -> None:
+        self.Osmium().tags_filter().overwrite().remove_tags() \
+                .output(out_file).osm_file(master_file).filter_expression(tags) \
+                .execute()
+        
+    def __or_filter(self, tags: list[str], master_file: str, out_file: str) -> None:
+        self.__f_manager.create_folder("osm_filter", 1)
+        normal = [x for x in tags if ("!" not in x)]
+        negated = list(set(tags) - set(normal))
+        counter = 0
+        tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
+        if (len(normal) != 0):
+            if (len(negated) == 0): tmp_file = out_file
+            self.Osmium().tags_filter().overwrite().remove_tags() \
+                .output(tmp_file).osm_file(master_file).filter_expression(normal) \
+                .execute()
+            if (len(negated) == 0): return
+        if (len(negated) != 0):
+            for tag in negated:
+                counter += 1
+                tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
+                self.Osmium().tags_filter().invert_match().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
+                    .filter_expression(tag.replace("!", "")).execute()
+        to_merge = [self.__f_manager.get_path(f"{x}.osm.pbf", 2) for x in range(0, counter + 1)]
+        self.Osmium().merge().overwrite().output(out_file).options(to_merge).execute()
+
+    def __and_filter(self, tags: list[str], master_file: str, out_file: str) -> None:
         counter = 0
         self.__f_manager.create_folder("osm_filter", 1)
         for tag in tags:
@@ -71,10 +96,10 @@ class LocalConnector(APIConnector):
                 if ("!=" in tag):
                     sub_tags = tag.split("!=")
                     self.Osmium().tags_filter().invert_match().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
-                        .filter_expression("w/" + sub_tags[0]).execute()
+                        .filter_expression(sub_tags[0]).execute()
                     tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
                     self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
-                        .filter_expression("w/" + tag).execute()
+                        .filter_expression(tag).execute()
                     counter += 1
                     tmp_file = self.__f_manager.get_path(f"{counter}.osm.pbf", 2)
                     self.Osmium().merge().overwrite().output(tmp_file) \
@@ -83,10 +108,10 @@ class LocalConnector(APIConnector):
                     counter += 1
                 else:
                     self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).osm_file(master_file) \
-                        .filter_expression("w/" + tag).execute()
+                        .filter_expression(tag).execute()
             else:
                 # Key
-                command = self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).filter_expression("w/" + tag).osm_file(master_file)
+                command = self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).filter_expression(tag).osm_file(master_file)
                 if ("!" in tag): command.invert_match()
                 command.execute()
             master_file = tmp_file
@@ -103,7 +128,7 @@ class LocalConnector(APIConnector):
         return elements
 
     def __filter_to_args(self, filter: str) -> list[str]:
-        elements = [x.replace("\"", "").replace("'", "").replace("~", "=").replace("|", ",") for x in findall(r"[^\[\]]+", filter)]
+        elements = ["w/" + x.replace("\"", "").replace("'", "").replace("~", "=").replace("|", ",") for x in findall(r"[^\[\]]+", filter)]
         return elements
     
     class Osmium:
