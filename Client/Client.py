@@ -45,7 +45,7 @@ try:
     def handle_request(center_point: list[float], zoom_level: int) -> None:
         response = None
         try:
-            with urlopen(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}", timeout = 60) as r:
+            with urlopen(f"{URL}/{('{0:0.6f}').format(center_point[0])}/{('{0:0.6f}').format(center_point[1])}/{zoom_level}", timeout = 600) as r:
                 response = r.read()
         except (HTTPError, URLError, TimeoutError):
             print("Connection refused or timeout. Make sure that ClientConfig.json is properly configured")
@@ -58,10 +58,11 @@ try:
     
     displayer.init_epd()
     handle_request(center_point, zoom_level)
-
+    
+    ua_bbox = [22.137059, 44.184598, 40.2275801, 52.3791473]
     command = ""
     while(command != "exit"):
-        print(f"\nCurrent zoom: {zoom_level}, center point: {center_point}\n")
+        print(f"\nCurrent zoom: {zoom_level}, center point [lat, lon]: {center_point[0]}, {center_point[1]}\n")
         command = input("Give input: ")
         match (command):
             case "exit":
@@ -89,23 +90,39 @@ try:
                 else: print("Already at min zoom level")
             case "cp m":
                 try:
-                    cp = input("Give center point [lon/lat]: ").split("/")
-                    center_point = [float(cp[0]), float(cp[1])]
+                    cp = input("Give center point [lat/lon]: ").split("/")
+                    cp_arr = [float(cp[0]), float(cp[1])]
+                    if (cp_arr[0] > ua_bbox[3] or cp_arr[0] < ua_bbox[1] or cp_arr[1] > ua_bbox[2] or cp_arr[1] < ua_bbox[0]):
+                        print(f"Center point must be between: latitude {ua_bbox[1]}:{ua_bbox[3]}, longitude {ua_bbox[0]}:{ua_bbox[2]}")
+                        continue
+                    center_point = cp_arr
                     handle_request(center_point, zoom_level)
                 except (ValueError):
                     print("Input: number/number")
             case "w":
-                center_point = Utils.add_meters_to_point_lon(center_point, Utils.horizontal_distance(center_point[0], zoom_level))
-                handle_request(center_point, zoom_level)
+                cp = Utils.add_meters_to_point_lat(center_point, Utils.horizontal_distance(center_point[0], zoom_level))
+                if (cp[0] < ua_bbox[3]):
+                    center_point = cp
+                    handle_request(center_point, zoom_level)
+                else: print("Already at max latitude")
             case "s":
-                center_point = Utils.add_meters_to_point_lon(center_point, -Utils.horizontal_distance(center_point[0], zoom_level))
-                handle_request(center_point, zoom_level)
+                cp = Utils.add_meters_to_point_lat(center_point, -Utils.horizontal_distance(center_point[0], zoom_level))
+                if (cp[0] > ua_bbox[1]):
+                    center_point = cp
+                    handle_request(center_point, zoom_level)
+                else: print("Already at min latitude")
             case "a":
-                center_point = Utils.add_meters_to_point_lat(center_point, -Utils.horizontal_distance(center_point[0], zoom_level))
-                handle_request(center_point, zoom_level)
+                cp = Utils.add_meters_to_point_lon(center_point, -Utils.horizontal_distance(center_point[0], zoom_level))
+                if (cp[1] > ua_bbox[0]):
+                    center_point = cp
+                    handle_request(center_point, zoom_level)
+                else: print("Already at min longitude")
             case "d":
-                center_point = Utils.add_meters_to_point_lat(center_point, Utils.horizontal_distance(center_point[0], zoom_level))
-                handle_request(center_point, zoom_level)
+                cp = Utils.add_meters_to_point_lon(center_point, Utils.horizontal_distance(center_point[0], zoom_level))
+                if (cp[1] < ua_bbox[2]):
+                    center_point = cp
+                    handle_request(center_point, zoom_level)
+                else: print("Already at max longitude")
             case "help":
                 print("----- Help -----")
                 print("exit\tExit")
