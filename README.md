@@ -4,12 +4,14 @@ This instruction will allow you to configure your environment and install all th
 
 Neither [Server Setup](#server-setup) nor [Client Setup](#client-setup) includes Python and Python Virtual Environment installation step.
 
-Installaion was tested on the Ubuntu 24.04.1 LTS and macOS Tahoe 26.0
+The system has been tested to work with Python 3.10-3.13.
+
+The installation was tested on Ubuntu 24.04.1 LTS and macOS Tahoe 26.0.
 
 ## Server Setup
 
 Assumptions:
-- Server has python3 installed
+- Server has python3 installed (preferred 3.10-3.13)
 - Server has python3-virtualenv installed
 
 ### Installing the Server
@@ -49,7 +51,7 @@ python3 Server.py
 ## Client Setup
 
 Assumptions:
-- Client has python3 installed
+- Client has python3 installed (preferred 3.10-3.13)
 - Client has python3-virtualenv installed
 - Client is running on Raspberry Pi
 - Client is (correctly) connected to the Waveshare 7.3-inch e-Paper HAT (F) display

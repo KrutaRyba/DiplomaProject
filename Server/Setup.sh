@@ -11,6 +11,21 @@ becho() {
   echo "${msg}"
 }
 
+becho "Checking python version"
+python_ver=`python3 -V`
+if [[ "${python_ver}" =~ 3.1[0-3]{1} ]]; then
+becho "Python version OK"
+else
+    yn="null"
+    echo "Server in not guaranteed to work with python version ${python_ver}"
+    while [[ ! "${yn}" =~ ^([YyNn]|[Yy][Ee][Ss]|[Nn][Oo])?$ ]]; do
+    read -p "Do you want to proceed anyway [y/n]: " yn
+    done
+    if [[ "${yn}" =~ ^([Nn]|[Nn][Oo])?$ ]]; then
+    exit 0
+    fi
+fi
+
 becho "Installing osmium-tool"
 case "${OSTYPE}" in
   "darwin"* )
