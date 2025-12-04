@@ -111,8 +111,9 @@ class LocalConnector(APIConnector):
                         .filter_expression(tag).execute()
             else:
                 # Key
-                command = self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).filter_expression(tag).osm_file(master_file)
+                command = self.Osmium().tags_filter().overwrite().remove_tags().output(tmp_file).osm_file(master_file)
                 if ("!" in tag): command.invert_match()
+                command.filter_expression(tag.replace("!", ""))
                 command.execute()
             master_file = tmp_file
         self.Osmium().cat().overwrite().output(out_file).osm_file(master_file).execute()
