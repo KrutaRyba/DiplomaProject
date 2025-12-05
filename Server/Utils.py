@@ -7,6 +7,7 @@ import sys
 class Utils:
     @staticmethod
     def filter_features_by_area(features: GeoDataFrame, area: float) -> GeoDataFrame:
+        if (features.empty): return features
         features = features[features.geometry.type.isin(["Polygon", "MultiPolygon"])]
         features = project_gdf(features)
         features["area"] = features["geometry"].area
