@@ -183,12 +183,13 @@ class MapRenderer:
     def __annotate_buildings(self, ax: Axes, buildings: GeoDataFrame) -> None:
         for _, build in buildings.iterrows():
             point = build["geometry"].centroid
-            try:
-                text = build["name"]
-                if (type(text) is not str): text = build["addr:housenumber"]
-            except (KeyError):
-                text = build["addr:housenumber"]
-            if (type(text) is not str): continue
+            text = ""
+            try: text = build["name"]
+            except (KeyError): pass
+            if (type(text) is not str or text == ""):
+                try: text = build["addr:housenumber"]
+                except (KeyError): pass
+            if (type(text) is not str or text == ""): continue
             lines = self.__split_by_n(text, 2)
             txt = ax.annotate(lines, (point.x, point.y), color = "#000000", horizontalalignment = "center", verticalalignment = "center", fontsize = "xx-small")
             txt.set_path_effects([withStroke(linewidth = 2, foreground = "#ffffff")])

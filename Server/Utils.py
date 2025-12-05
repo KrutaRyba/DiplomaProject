@@ -28,3 +28,8 @@ class Utils:
     
 class Definitions:
     OSM_FOLDER: str = ".osm_tmp"
+
+class ConsoleStyles:
+    WARNING = "\033[93m"
+    NORMAL = "\033[0m"
+    ERROR = "\033[91m"
